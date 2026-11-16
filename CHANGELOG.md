@@ -19,3 +19,6 @@ project uses [Semantic Versioning](https://semver.org/).
   `lint_vault`, and `write_note` only with `--allow-write`.
 - `.vault-recall.toml` configuration.
 - Works on BM25 alone when the `embed` extra is not installed.
+
+[Unreleased]: https://github.com/amercans/vault-recall/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/amercans/vault-recall/releases/tag/v0.1.0
