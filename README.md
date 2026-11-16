@@ -129,7 +129,7 @@ Add a `UserPromptSubmit` hook to the user-level `settings.json` of Claude Code (
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "vault-recall hook --vault ~/notes" }
+          { "type": "command", "command": "vault-recall hook --vault ~/notes", "timeout": 10 }
         ]
       }
     ]
@@ -168,13 +168,13 @@ A call takes under a second on the fixture vault, most of it loading the model.
 
 `write_note` creates `<name>.md` in the vault root with frontmatter. Names must match `^[a-z0-9][a-z0-9-]{0,80}$`. It refuses to overwrite unless `overwrite=true`, never touches an index file, and refuses paths, symlinks and anything that would land outside the vault.
 
-Claude Desktop, in `claude_desktop_config.json`:
+Claude Desktop, in `claude_desktop_config.json`. Desktop starts servers with a minimal `PATH`, so give the absolute path to the executable (the output of `which vault-recall`, for example `/path/to/bin/vault-recall`) and a vault path without `~`:
 
 ```json
 {
   "mcpServers": {
     "vault-recall": {
-      "command": "vault-recall",
+      "command": "/path/to/bin/vault-recall",
       "args": ["serve", "--vault", "/path/to/vault"]
     }
   }
