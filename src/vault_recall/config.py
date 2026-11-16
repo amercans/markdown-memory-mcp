@@ -77,7 +77,8 @@ def _number(data: dict[str, Any], key: str, kind: type, lo: float, hi: float | N
     value = data[key]
     ok = isinstance(value, kind) or (kind is float and isinstance(value, int))
     if isinstance(value, bool) or not ok:
-        raise ConfigError(f"{key} must be a {kind.__name__}")
+        article = "an" if kind is int else "a"
+        raise ConfigError(f"{key} must be {article} {kind.__name__}")
     if value < lo or (hi is not None and value > hi):
         bound = f">= {lo}" if hi is None else f"between {lo} and {hi}"
         raise ConfigError(f"{key} must be {bound}")
@@ -100,6 +101,14 @@ def load_config(
     elif config_path:
         raise ConfigError(f"config file not found: {path}")
 
+    try:
+        values = _validate(data)
+    except ConfigError as exc:
+        raise ConfigError(f"{path}: {exc}") from exc
+    return Config(vault=root, **values)
+
+
+def _validate(data: dict[str, Any]) -> dict[str, Any]:
     unknown = sorted(set(data) - _KEYS)
     if unknown:
         raise ConfigError(f"unknown config keys: {', '.join(unknown)}")
@@ -137,4 +146,4 @@ def load_config(
         values["budget_hard"] = hard if hard is not None else Config.budget_hard
         if values["budget_soft"] > values["budget_hard"]:
             raise ConfigError("index_budget_bytes.soft must not exceed hard")
-    return Config(vault=root, **values)
+    return values

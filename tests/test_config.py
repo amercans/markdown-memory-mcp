@@ -70,3 +70,14 @@ def test_vault_resolution_order(vault_dir, tmp_path, monkeypatch):
 def test_missing_vault(tmp_path):
     with pytest.raises(ConfigError, match="not a directory"):
         resolve_vault(str(tmp_path / "nope"))
+
+
+def test_errors_name_the_file_and_use_correct_grammar(vault_dir):
+    path = vault_dir / ".vault-recall.toml"
+    path.write_text('k = "3"\n')
+    with pytest.raises(ConfigError) as exc:
+        load_config(str(vault_dir))
+    assert str(exc.value) == f"{path}: k must be an int"
+    path.write_text('min_similarity = "x"\n')
+    with pytest.raises(ConfigError, match="min_similarity must be a float"):
+        load_config(str(vault_dir))

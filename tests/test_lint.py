@@ -7,7 +7,7 @@ import pytest
 from conftest import write_note
 from vault_recall.cli import main
 from vault_recall.config import ConfigError, load_config
-from vault_recall.lint import exit_code, format_human, lint, stored_vectors, summarise
+from vault_recall.lint import Finding, exit_code, format_human, lint, stored_vectors, summarise
 from vault_recall.store import Store
 from vault_recall.vault import load_vault
 
@@ -165,7 +165,7 @@ def test_summary_and_human_format(cfg):
     assert counts["error"] == 5 and counts["info"] == 2
     text = format_human(findings)
     assert text.startswith("MEMORY.md\n")
-    assert "VR001  error" in text and text.rstrip().endswith("notes")
+    assert "VR001  error" in text and text.rstrip().endswith("5 errors, 4 warnings, 2 info")
     assert format_human([]) == "No problems found."
 
 
@@ -246,3 +246,12 @@ def test_alias_in_frontmatter_is_invalid_frontmatter(cfg, vault_dir):
     write_note(vault_dir, "aliased.md", "---\nname: &a aliased\ndescription: *a\n---\n")
     messages = [f.message for f in by_code(run_lint(cfg))["VR003"] if f.path == "aliased.md"]
     assert messages == ["frontmatter is not a valid YAML mapping"]
+
+
+def test_summary_line_uses_singular_and_plural(cfg):
+    one = [Finding("VR001", "error", "a.md", 1, "x")]
+    assert format_human(one).endswith("1 error, 0 warnings, 0 info")
+    mixed = [Finding("VR004", "warning", "a.md", 1, "x")] * 2 + [
+        Finding("VR006", "info", "a.md", None, "x")
+    ]
+    assert format_human(mixed).endswith("0 errors, 2 warnings, 1 info")

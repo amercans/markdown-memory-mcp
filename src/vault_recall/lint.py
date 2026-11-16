@@ -181,5 +181,7 @@ def format_human(findings: list[Finding]) -> str:
         out.append(f"  {line:<5} {f.code}  {f.level:<7}  {f.message}")
     counts = summarise(findings)
     out.append("")
-    out.append(f"{counts['error']} errors, {counts['warning']} warnings, {counts['info']} notes")
+    errors = f"{counts['error']} error{'' if counts['error'] == 1 else 's'}"
+    warnings = f"{counts['warning']} warning{'' if counts['warning'] == 1 else 's'}"
+    out.append(f"{errors}, {warnings}, {counts['info']} info")
     return "\n".join(out)
