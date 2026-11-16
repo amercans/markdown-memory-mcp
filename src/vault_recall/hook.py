@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 import time
 from datetime import UTC, datetime
@@ -17,7 +18,7 @@ from typing import TextIO
 from .config import Config, load_config
 from .embed import EmbedderFactory, default_factory
 from .search import build_corpus
-from .store import Store, atomic_write, cache_root
+from .store import Store, atomic_write, cache_root, private_dir
 from .text import fold, words
 from .vault import Resolver
 
@@ -155,19 +156,24 @@ def handle(payload: object, cfg: Config, factory: EmbedderFactory | None) -> str
     )
 
 
+def _write_log(log: Path, text: str, flag: int) -> None:
+    fd = os.open(log, os.O_WRONLY | os.O_CREAT | flag, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(text)
+
+
 def log_failure(exc: BaseException, root: Path | None = None) -> None:
     """Append one line to ``hook.log``. Must not raise."""
     try:
         root = root or cache_root()
-        root.mkdir(parents=True, exist_ok=True)
+        private_dir(root)
         log = root / "hook.log"
         if log.exists() and log.stat().st_size > LOG_MAX_BYTES:
             tail = log.read_text(encoding="utf-8", errors="replace").splitlines()[-100:]
-            log.write_text("\n".join(tail) + "\n", encoding="utf-8")
+            _write_log(log, "\n".join(tail) + "\n", os.O_TRUNC)
         stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         message = " ".join(f"{type(exc).__name__}: {exc}".split())[:300]
-        with log.open("a", encoding="utf-8") as handle_:
-            handle_.write(f"{stamp} {message}\n")
+        _write_log(log, f"{stamp} {message}\n", os.O_APPEND)
     except Exception:
         return
 

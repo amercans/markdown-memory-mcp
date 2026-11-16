@@ -306,3 +306,15 @@ def test_context_is_capped(vault_dir):
     text = context(call(cfg, "sourdough starter feeding schedule"))
     assert len(text) <= hook.MAX_CONTEXT_CHARS
     assert text.count("\n- ") >= 5  # it still lists several notes, then stops
+
+
+def test_hook_state_is_private(indexed):
+    call(indexed, session="private")
+    hook.log_failure(RuntimeError("x"))
+    store = Store(indexed.vault, indexed.model)
+    mode = lambda p: p.stat().st_mode & 0o777  # noqa: E731
+    assert mode(cache_root() / "hook.log") == 0o600
+    assert mode(store.dir / "sessions") == 0o700
+    (session_file,) = (store.dir / "sessions").glob("*.json")
+    assert mode(session_file) == 0o600
+    assert mode(store.dir) == 0o700 and mode(cache_root()) == 0o700

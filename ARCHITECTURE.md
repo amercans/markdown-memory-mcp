@@ -72,7 +72,7 @@ The notes are the user's own, but they can contain text from the web or from ear
 | A model overwrites a note or the index | `write_note` is off by default. `overwrite` must be set explicitly. Index files are never written. | With `--allow-write` and `overwrite=true`, a model can replace any non-index note in the vault root. Keep the vault in version control. |
 | A crafted note breaks the hook or the lint | YAML is parsed with `safe_load`. Parse failures are reported as findings. The hook swallows exceptions. | A note can still waste CPU. Files over 1 MB are skipped. |
 | Injected notes carry instructions | The hook adds names, descriptions and paths, not note bodies, under a header that tells the assistant to read before acting. | A description is free text written by the user and, with `write_note`, possibly by a model. |
-| Note content leaves the machine | No network code except the model download in fastembed. The cache holds vectors and hashes, not text. | Vectors can leak some information about the text. The cache directory is created with the default umask and the files with mode 0600. |
+| Note content leaves the machine | No network code except the model download in fastembed. The cache holds vectors, the absolute vault path, relative file names, mtimes and hashes, not text. Cache directories are created with mode 0700 and files with 0600, including `hook.log` and the session files. | Vectors can leak some information about the text, and file names and the vault path are readable by anyone who can read the cache. Directories that already existed are not changed. |
 | The model download is tampered with | Downloaded over HTTPS from Hugging Face by fastembed. | Trust in that source and in fastembed's checks. |
 
 ## Design decisions

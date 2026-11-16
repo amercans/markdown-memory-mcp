@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -32,9 +33,24 @@ def cache_root(env: dict[str, str] | None = None) -> Path:
     return Path.home() / ".cache" / "vault-recall"
 
 
+def private_dir(path: Path) -> None:
+    """Create ``path`` and any missing parents with mode 0700. Existing directories are kept."""
+    missing = []
+    for candidate in (path, *path.parents):
+        if candidate.exists():
+            break
+        missing.append(candidate)
+    for directory in reversed(missing):
+        with contextlib.suppress(FileExistsError):
+            directory.mkdir(mode=0o700)
+
+
 def atomic_write(path: Path, writer) -> None:
-    """Write through a temporary file in the same directory, then replace."""
-    path.parent.mkdir(parents=True, exist_ok=True)
+    """Write through a temporary file in the same directory, then replace.
+
+    The file is private (mode 0600) and so are directories created on the way.
+    """
+    private_dir(path.parent)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
     try:
         with os.fdopen(fd, "wb") as handle:

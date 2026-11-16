@@ -247,7 +247,7 @@ hard = 15000
 
 ## Privacy
 
-Everything runs on your machine. The only network access is the one-time download of the embedding model from Hugging Face, the first time you run `vault-recall index`. After that nothing leaves the machine: no telemetry and no calls to a hosted API. The index lives in the cache directory, never inside the vault. It holds vectors, file hashes and relative file names, not note text.
+Everything runs on your machine. The only network access is the one-time download of the embedding model from Hugging Face, the first time you run `vault-recall index`. After that nothing leaves the machine: no telemetry and no calls to a hosted API. The index lives in the cache directory, never inside the vault. It holds the vectors and, in `meta.json`, the model name, the absolute path of the vault, and each note's relative file name, modification time and hash. It holds no note text. The cache directories it creates are mode 0700 and its files 0600.
 
 ## Limitations
 
