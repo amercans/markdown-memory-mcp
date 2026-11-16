@@ -204,6 +204,7 @@ The vault is taken from `--vault`, then `$VAULT_RECALL_VAULT`, then the current 
 ```toml
 index_files = ["MEMORY.md"]
 exclude = [".obsidian/**", ".trash/**"]
+lint_exclude = []
 model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 k = 3
 min_similarity = 0.40
@@ -222,6 +223,7 @@ hard = 15000
 |---|---|---|
 | `index_files` | `["MEMORY.md"]` | Index files, relative to the vault. They are linted as indexes and not searched, and what they link to counts as already in context. |
 | `exclude` | `[".obsidian/**", ".trash/**"]` | Glob patterns, relative to the vault, for files to ignore. Setting it replaces the default. |
+| `lint_exclude` | `[]` | Glob patterns for files that `lint` does not report on, in addition to `exclude`. They are still searched and still count as link sources and targets. Useful for backup or archive folders. |
 | `model` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | A multilingual model that fastembed supports, for example `minishlab/potion-multilingual-128M`. Changing it builds a new index. |
 | `k` | `3` | Results for `search` and the hook. |
 | `min_similarity` | `0.40` | Minimum cosine for the hook to inject a note. Without embeddings, any BM25 match counts. |

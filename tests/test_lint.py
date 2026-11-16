@@ -6,7 +6,7 @@ import pytest
 
 from conftest import write_note
 from vault_recall.cli import main
-from vault_recall.config import load_config
+from vault_recall.config import ConfigError, load_config
 from vault_recall.lint import exit_code, format_human, lint, stored_vectors, summarise
 from vault_recall.store import Store
 from vault_recall.vault import load_vault
@@ -211,3 +211,23 @@ def test_vr009_skips_url_routes_but_checks_real_prefixes(cfg, vault_dir):
     )
     messages = [f.message for f in by_code(run_lint(cfg))["VR009"] if f.path == "paths.md"]
     assert messages == ["path in code span does not exist: /etc/definitely-missing-file"]
+
+
+def test_lint_exclude_hides_findings_but_keeps_files_searchable(vault_dir):
+    (vault_dir / "archive").mkdir()
+    write_note(vault_dir, "archive/old.md", "no frontmatter and [[nowhere]]\n")
+    cfg = load_config(str(vault_dir))
+    assert "archive/old.md" in {f.path for f in lint(cfg, load_vault(cfg))}
+
+    (vault_dir / ".vault-recall.toml").write_text('lint_exclude = ["archive/**"]\n')
+    cfg = load_config(str(vault_dir))
+    vault = load_vault(cfg)
+    assert not [f for f in lint(cfg, vault) if f.path.startswith("archive/")]
+    assert "archive/old.md" in {n.rel for n in vault.notes}  # still part of the vault
+    assert any(f.code == "VR001" for f in lint(cfg, vault))  # other files are still linted
+
+
+def test_lint_exclude_is_validated(vault_dir):
+    (vault_dir / ".vault-recall.toml").write_text('lint_exclude = "archive"\n')
+    with pytest.raises(ConfigError):
+        load_config(str(vault_dir))

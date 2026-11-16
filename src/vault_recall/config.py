@@ -21,6 +21,7 @@ class Config:
     vault: Path
     index_files: tuple[str, ...] = ("MEMORY.md",)
     exclude: tuple[str, ...] = (".obsidian/**", ".trash/**")
+    lint_exclude: tuple[str, ...] = ()
     model: str = DEFAULT_MODEL
     k: int = 3
     min_similarity: float = 0.40
@@ -36,6 +37,7 @@ class Config:
 _KEYS = {
     "index_files",
     "exclude",
+    "lint_exclude",
     "model",
     "k",
     "min_similarity",
@@ -101,7 +103,7 @@ def load_config(
         raise ConfigError(f"unknown config keys: {', '.join(unknown)}")
 
     values: dict[str, Any] = {}
-    for key in ("index_files", "exclude", "required_fields"):
+    for key in ("index_files", "exclude", "lint_exclude", "required_fields"):
         parsed = _str_list(data, key)
         if parsed is not None:
             values[key] = parsed

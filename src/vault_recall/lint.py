@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from .config import Config
 from .embed import embeddings_installed
 from .store import Store
-from .vault import Note, Resolver, Vault, backticked_paths, extract_links
+from .vault import Note, Resolver, Vault, backticked_paths, extract_links, is_excluded
 
 if TYPE_CHECKING:
     import numpy as np
@@ -72,6 +72,9 @@ def lint(cfg: Config, vault: Vault, vectors: dict[str, np.ndarray] | None = None
     if vectors:
         _check_near_duplicates(cfg, vault, vectors, add)
 
+    # Files matching lint_exclude are still read, so links from and to them keep resolving,
+    # but nothing is reported about them.
+    findings = [f for f in findings if not is_excluded(f.path, cfg.lint_exclude)]
     findings.sort(key=lambda f: (f.path, f.line or 0, f.code))
     return findings
 
