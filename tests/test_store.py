@@ -161,3 +161,49 @@ def test_quiet_hub_sets_defaults_without_overriding(monkeypatch):
     quiet_hub()
     assert os.environ["HF_HUB_DISABLE_TELEMETRY"] == "1"
     assert os.environ["HF_HUB_VERBOSITY"] == "info"
+
+
+def test_crash_between_the_two_writes_is_detected_and_repaired(cfg, vault_dir, monkeypatch):
+    from vault_recall import store as store_module
+
+    store = make_store(cfg)
+    emb = CountingEmbedder()
+    store.update(load_vault(cfg).notes, emb)
+
+    write_note(vault_dir, "extra.md", "---\nname: extra\ndescription: d\n---\nextra text")
+    (vault_dir / "home-lab-dns.md").write_text("---\nname: home-lab-dns\n---\nchanged")
+    notes = load_vault(cfg).notes
+    real = store_module.atomic_write
+    calls = []
+
+    def crash_on_meta(path, writer):
+        calls.append(path.name)
+        if path.name == "meta.json":
+            raise OSError("crash")
+        real(path, writer)
+
+    monkeypatch.setattr(store_module, "atomic_write", crash_on_meta)
+    with pytest.raises(OSError):
+        store.update(notes, emb)
+    assert calls == ["vectors.npy", "meta.json"]
+
+    # New vectors with old metadata must not be trusted.
+    assert store.vectors_for(notes) == {}
+    assert store.changes(notes).count == len(notes)
+
+    monkeypatch.setattr(store_module, "atomic_write", real)
+    store.update(notes, emb)
+    assert len(store.vectors_for(notes)) == len(notes)
+    assert not store.changes(notes).count
+
+
+def test_meta_records_the_vectors_hash(cfg):
+    import hashlib
+
+    store = make_store(cfg)
+    store.update(load_vault(cfg).notes, HashingEmbedder())
+    meta = json.loads((store.dir / "meta.json").read_text())
+    assert (
+        meta["vectors_sha256"]
+        == hashlib.sha256((store.dir / "vectors.npy").read_bytes()).hexdigest()
+    )

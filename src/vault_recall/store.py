@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
+import io
 import json
 import os
 import tempfile
@@ -17,7 +18,7 @@ from .vault import Note
 if TYPE_CHECKING:
     import numpy as np
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 
 
 class StoreError(Exception):
@@ -108,8 +109,13 @@ class Store:
             return None
         try:
             meta = json.loads(self._meta.read_text(encoding="utf-8"))
-            vectors = np.load(self._vectors, allow_pickle=False)
-        except (OSError, ValueError):
+            raw = self._vectors.read_bytes()
+            # The two files are replaced one after the other. If a crash fell between the
+            # writes, the hash recorded in meta.json no longer matches vectors.npy.
+            if hashlib.sha256(raw).hexdigest() != meta.get("vectors_sha256"):
+                return None
+            vectors = np.load(io.BytesIO(raw), allow_pickle=False)
+        except (OSError, ValueError, AttributeError):
             return None
         if meta.get("version") != FORMAT_VERSION or meta.get("model") != self.model:
             return None
@@ -167,18 +173,22 @@ class Store:
             if ordered
             else np.zeros((0, 0), dtype=np.float32)
         )
+        buffer = io.BytesIO()
+        np.save(buffer, matrix, allow_pickle=False)
+        payload = buffer.getvalue()
         meta = {
             "version": FORMAT_VERSION,
             "model": self.model,
             "vault": str(self.vault),
             "dim": int(matrix.shape[1]) if ordered else 0,
+            "vectors_sha256": hashlib.sha256(payload).hexdigest(),
             "files": [
                 {"path": n.rel, "mtime": n.mtime, "sha256": n.sha256, "row": i}
                 for i, n in enumerate(ordered)
             ],
         }
         if changes.count or not self.exists():
-            atomic_write(self._vectors, lambda fh: np.save(fh, matrix, allow_pickle=False))
+            atomic_write(self._vectors, lambda fh: fh.write(payload))
             atomic_write(self._meta, lambda fh: fh.write(json.dumps(meta, indent=1).encode()))
         return UpdateResult(
             added=len(changes.added),
