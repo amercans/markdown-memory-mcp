@@ -166,7 +166,7 @@ A call takes under a second on the fixture vault, most of it loading the model.
 | `lint_vault()` | The same findings as `vault-recall lint` |
 | `write_note(name, description, body, type=None, overwrite=False)` | Registered only with `--allow-write` |
 
-`write_note` creates `<name>.md` in the vault root with frontmatter. Names must match `^[a-z0-9][a-z0-9-]{0,80}$`. It refuses to overwrite unless `overwrite=true`, never touches an index file, and refuses paths, symlinks and anything that would land outside the vault.
+`write_note` creates `<name>.md` in the vault root with frontmatter. Names must match `^[a-z0-9](?:[a-z0-9-]{0,79}[a-z0-9])?$` (lowercase letters, digits and inner dashes, 1 to 81 characters). It refuses to overwrite unless `overwrite=true`, never touches an index file, and refuses paths, symlinks and anything that would land outside the vault.
 
 Claude Desktop, in `claude_desktop_config.json`. Desktop starts servers with a minimal `PATH`, so give the absolute path to the executable (the output of `which vault-recall`, for example `/path/to/bin/vault-recall`) and a vault path without `~`:
 

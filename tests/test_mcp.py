@@ -153,7 +153,20 @@ def test_name_clash_with_a_frontmatter_name_is_refused(writable):
 
 @pytest.mark.parametrize(
     "name",
-    ["../escape", "a/b", "/abs", "UPPER", "has space", "-leading", "dot.md", "", "x" * 82, "ünï"],
+    [
+        "../escape",
+        "a/b",
+        "/abs",
+        "UPPER",
+        "has space",
+        "-leading",
+        "trailing-",
+        "x-",
+        "dot.md",
+        "",
+        "x" * 82,
+        "ünï",
+    ],
 )
 def test_invalid_names_never_touch_the_disk(writable, vault_dir, tmp_path, name):
     before = sorted(p.name for p in vault_dir.glob("*"))
@@ -245,3 +258,8 @@ def test_new_notes_follow_the_umask_and_overwrites_keep_the_mode(writable, vault
     path.chmod(0o600)
     writable.write_note("masked", "d2", "b2", overwrite=True)
     assert path.stat().st_mode & 0o777 == 0o600
+
+
+def test_single_character_and_inner_dashes_are_valid_names(writable):
+    assert writable.write_note("a", "d", "b")["path"] == "a.md"
+    assert writable.write_note("a-b-c", "d", "b")["path"] == "a-b-c.md"

@@ -16,7 +16,7 @@ from .lint import lint, stored_vectors
 from .search import build_corpus
 from .vault import MAX_NOTE_BYTES, Resolver, load_vault
 
-SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")
+SLUG = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,79}[a-z0-9])?$")
 TYPE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 MAX_UPDATES = 200
 
@@ -190,7 +190,9 @@ class VaultTools:
     def _write_target(self, name: str) -> Path:
         self._reject_path_like(name)
         if not SLUG.match(name):
-            raise ToolError("name must match ^[a-z0-9][a-z0-9-]{0,80}$")
+            raise ToolError(
+                "name must be 1-81 lowercase letters, digits or dashes, not ending in a dash"
+            )
         filename = f"{name}.md"
         target = self.root / filename
         if self._is_index_file(filename, target):
