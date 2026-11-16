@@ -170,3 +170,33 @@ def test_module_entry_point(vault_dir):
         check=True,
     )
     assert proc.stdout.startswith("vault-recall ")
+
+
+def test_search_never_downloads_the_model(vault_dir, fake_model, monkeypatch):
+    cli.main(["index", "--vault", str(vault_dir)])
+    seen = {}
+
+    def spy(model, cache_root, *, local_only):
+        seen["local_only"] = local_only
+        return lambda: HashingEmbedder()
+
+    monkeypatch.setattr(cli, "default_factory", spy)
+    cli.main(["search", "nginx", "--vault", str(vault_dir)])
+    assert seen == {"local_only": True}
+
+
+def test_search_falls_back_when_the_model_is_missing(vault_dir, fake_model, monkeypatch, capsys):
+    from vault_recall.embed import EmbedUnavailable
+
+    cli.main(["index", "--vault", str(vault_dir)])
+    capsys.readouterr()
+
+    def missing():
+        raise EmbedUnavailable("not downloaded")
+
+    monkeypatch.setattr(cli, "default_factory", lambda *a, **k: missing)
+    assert cli.main(["search", "nginx cache", "--vault", str(vault_dir), "--json"]) == 0
+    captured = capsys.readouterr()
+    assert json.loads(captured.out)[0]["name"] == "nginx-cache-headers"
+    assert "not downloaded" in captured.err and "BM25 only" in captured.err
+    assert "downloads the model" in captured.err

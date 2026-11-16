@@ -79,10 +79,17 @@ def cmd_index(cfg: Config) -> int:
 
 
 def cmd_search(cfg: Config, args: argparse.Namespace) -> int:
-    corpus = build_corpus(cfg, _factory(cfg))
+    # Searching never downloads the model; only `index` does.
+    corpus = build_corpus(cfg, _factory(cfg, local_only=True))
     if corpus is None:  # not reachable without require_index; keeps the type honest
         return 2
-    if not corpus.hybrid:
+    if corpus.notice:
+        print(
+            f"embedding model not available ({corpus.notice}): ranking by BM25 only. "
+            "`vault-recall index` downloads the model.",
+            file=sys.stderr,
+        )
+    elif not corpus.hybrid:
         print(
             "no embedding index: ranking by BM25 only (run `vault-recall index`)", file=sys.stderr
         )

@@ -54,6 +54,7 @@ class Corpus:
     vectors: dict[str, np.ndarray]  # by relative path; only notes whose hash matches
     embedder: Embedder | None
     stale: int = 0  # notes whose vector is missing or out of date
+    notice: str | None = None  # why embeddings are not used, when an index exists
 
     @property
     def notes(self) -> tuple[Note, ...]:
@@ -124,9 +125,10 @@ def build_corpus(
         return None if require_index else corpus
     try:
         embedder = factory()
-    except EmbedUnavailable:
+    except EmbedUnavailable as exc:
         if require_index:
             raise
+        corpus.notice = str(exc)
         return corpus
     changes = store.changes(vault.notes)
     if changes.count and (max_updates is None or changes.count <= max_updates):
