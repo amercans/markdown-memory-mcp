@@ -207,7 +207,7 @@ exclude = [".obsidian/**", ".trash/**"]
 lint_exclude = []
 model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 k = 3
-min_similarity = 0.40
+min_similarity = 0.30
 relative_margin = 0.08
 strong_similarity = 0.55
 required_fields = ["name", "description"]
@@ -227,7 +227,7 @@ hard = 15000
 | `lint_exclude` | `[]` | Glob patterns for files that `lint` does not report on, in addition to `exclude`. They are still searched and still count as link sources and targets. Useful for backup or archive folders. |
 | `model` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | A multilingual model that fastembed supports, for example `minishlab/potion-multilingual-128M`. Changing it builds a new index. |
 | `k` | `3` | Results for `search` and the hook. |
-| `min_similarity` | `0.40` | Minimum cosine for the hook to inject a note. Without embeddings, any BM25 match counts. |
+| `min_similarity` | `0.30` | Minimum cosine for the hook to inject a note. Without embeddings, any BM25 match counts. |
 | `relative_margin` | `0.08` | The hook injects a note only if its cosine is within this distance of the best cosine over all notes, including notes it skips because an index file already links them. If the best match is already in context, weaker notes are not used as filler. |
 | `strong_similarity` | `0.55` | A note that shares no word with the prompt (BM25 score 0) is injected only if its cosine reaches this value. Notes with a lexical match need only pass `min_similarity` and `relative_margin`. |
 | `required_fields` | `["name", "description"]` | Frontmatter fields checked by VR003. |

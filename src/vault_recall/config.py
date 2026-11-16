@@ -24,7 +24,7 @@ class Config:
     lint_exclude: tuple[str, ...] = ()
     model: str = DEFAULT_MODEL
     k: int = 3
-    min_similarity: float = 0.40
+    min_similarity: float = 0.30
     relative_margin: float = 0.08
     strong_similarity: float = 0.55
     required_fields: tuple[str, ...] = ("name", "description")
