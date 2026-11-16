@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 import numpy as np
 import pytest
@@ -150,3 +151,13 @@ def test_no_temp_files_left_behind(cfg):
     store = make_store(cfg)
     store.update(load_vault(cfg).notes, HashingEmbedder())
     assert sorted(p.name for p in store.dir.glob("*")) == ["meta.json", "vectors.npy"]
+
+
+def test_quiet_hub_sets_defaults_without_overriding(monkeypatch):
+    from vault_recall.embed import quiet_hub
+
+    monkeypatch.delenv("HF_HUB_DISABLE_TELEMETRY", raising=False)
+    monkeypatch.setenv("HF_HUB_VERBOSITY", "info")
+    quiet_hub()
+    assert os.environ["HF_HUB_DISABLE_TELEMETRY"] == "1"
+    assert os.environ["HF_HUB_VERBOSITY"] == "info"

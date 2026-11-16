@@ -64,7 +64,7 @@ cd vault-recall
 
 For your own vault, use `--vault tests/fixtures/vault` instead of `--vault tests/fixtures/vault`. If you run a command from inside the vault, or set `VAULT_RECALL_VAULT`, `--vault` can be left out.
 
-Build the index. The first run downloads the model. Later runs embed only new and changed notes.
+Build the index. The first run downloads the model (about 220 MB, from a public repository, so no Hugging Face token is needed) and shows a download progress bar. Later runs embed only new and changed notes. `search`, `lint`, the hook and the server never download anything.
 
 ```console
 $ vault-recall index --vault tests/fixtures/vault

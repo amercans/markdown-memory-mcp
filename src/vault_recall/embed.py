@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
@@ -62,8 +63,19 @@ class HashingEmbedder:
         return l2_normalise(out)
 
 
+def quiet_hub() -> None:
+    """Keep the Hugging Face client from sending telemetry or warning about a missing token.
+
+    The model is public, so no token is needed. Set before the library is imported, and never
+    overrides a value the user has set.
+    """
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+    os.environ.setdefault("HF_HUB_VERBOSITY", "error")
+
+
 class FastEmbedder:
     def __init__(self, model: str, cache_dir: Path, local_only: bool) -> None:
+        quiet_hub()
         try:
             from fastembed import TextEmbedding
         except ImportError as exc:
