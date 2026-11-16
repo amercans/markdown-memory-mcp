@@ -6,6 +6,12 @@ project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-16
+
+### Changed
+- Renamed from vault-recall to markdown-memory-mcp (package, command, config file, environment
+  variables); old config file name still read for this release.
+
 ## [0.1.0] - 2026-11-16
 
 ### Added
@@ -20,5 +26,6 @@ project uses [Semantic Versioning](https://semver.org/).
 - `.vault-recall.toml` configuration.
 - Works on BM25 alone when the `embed` extra is not installed.
 
-[Unreleased]: https://github.com/amercans/vault-recall/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/amercans/vault-recall/releases/tag/v0.1.0
+[Unreleased]: https://github.com/amercans/markdown-memory-mcp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/amercans/markdown-memory-mcp/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/amercans/markdown-memory-mcp/releases/tag/v0.1.0
