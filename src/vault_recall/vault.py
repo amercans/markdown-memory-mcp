@@ -261,16 +261,19 @@ class Resolver:
 
     def __init__(self, vault: Vault) -> None:
         self.vault = vault
-        self._by_key: dict[str, list[Note]] = {}
+        self._by_stem: dict[str, list[Note]] = {}
+        self._by_name: dict[str, list[Note]] = {}
         self._by_path: dict[Path, Note] = {}
         for note in (*vault.notes, *vault.indexes):
             self._by_path[note.path.resolve()] = note
-            for key in {note.stem.lower(), (note.name or "").lower()} - {""}:
-                self._by_key.setdefault(key, []).append(note)
+            self._by_stem.setdefault(note.stem.lower(), []).append(note)
+            if note.name:
+                self._by_name.setdefault(note.name.lower(), []).append(note)
 
     def lookup(self, name: str) -> Note | None:
-        """A note by stem or frontmatter name, case-insensitive. The first match wins."""
-        matches = self._by_key.get(name.strip().lower())
+        """A note by file stem, then by frontmatter name; case-insensitive, first match wins."""
+        key = name.strip().lower()
+        matches = self._by_stem.get(key) or self._by_name.get(key)
         return matches[0] if matches else None
 
     def resolve(self, link: Link, source: Note) -> Note | bool | None:
