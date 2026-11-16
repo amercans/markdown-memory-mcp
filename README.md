@@ -55,19 +55,26 @@ Extras: `embed` (fastembed and numpy), `mcp` (the MCP server), `all` (both). The
 
 ## Quick start
 
-The examples were run on the small vault in `tests/fixtures/vault`. Replace the path with your own, for example `~/notes`. If you run a command from inside the vault, or set `VAULT_RECALL_VAULT`, `--vault` can be left out.
+The examples run on the small invented vault that ships in the repository. Clone it to follow along:
+
+```sh
+git clone https://github.com/amercans/vault-recall
+cd vault-recall
+```
+
+For your own vault, use `--vault tests/fixtures/vault` instead of `--vault tests/fixtures/vault`. If you run a command from inside the vault, or set `VAULT_RECALL_VAULT`, `--vault` can be left out.
 
 Build the index. The first run downloads the model. Later runs embed only new and changed notes.
 
 ```console
-$ vault-recall index --vault ~/notes
-13 notes: 13 added, 0 updated, 0 removed, 0 unchanged (~/.cache/vault-recall/40e0aaef2855ad2f)
+$ vault-recall index --vault tests/fixtures/vault
+13 notes: 13 added, 0 updated, 0 removed, 0 unchanged (~/.cache/vault-recall/<hash>)
 ```
 
 Search. Neither "keep" nor "alive" appears in the note that comes first:
 
 ```console
-$ vault-recall search "how do I keep the starter alive" --vault ~/notes -k 1
+$ vault-recall search "how do I keep the starter alive" --vault tests/fixtures/vault -k 1
 1. sourdough-starter-feeding  [rrf 0.0328  cosine 0.47  bm25 7.23]
    sourdough-starter-feeding.md
    How often to feed a sourdough starter and how to revive one that has gone sluggish
@@ -76,7 +83,7 @@ $ vault-recall search "how do I keep the starter alive" --vault ~/notes -k 1
 A Turkish query finds the Turkish note. This hit comes from the lexical side (the stem `simit`); the cosine is low. It demonstrates folding and stemming, not cross-language recall:
 
 ```console
-$ vault-recall search "simit nasıl yapılır" --vault ~/notes -k 1
+$ vault-recall search "simit nasıl yapılır" --vault tests/fixtures/vault -k 1
 1. istanbul-simit  [rrf 0.0328  cosine 0.13  bm25 3.23]
    istanbul-simit.md
    İstanbul usulü simit tarifi, pekmezli su ve susam ile
@@ -85,7 +92,7 @@ $ vault-recall search "simit nasıl yapılır" --vault ~/notes -k 1
 Lint. The fixture vault contains one deliberate defect for each rule, apart from VR007:
 
 ```console
-$ vault-recall lint --vault ~/notes
+$ vault-recall lint --vault tests/fixtures/vault
 MEMORY.md
   L10   VR002  error    index links to missing file retired-vpn-notes.md
   L14   VR010  warning  line has 244 characters (max 200)
