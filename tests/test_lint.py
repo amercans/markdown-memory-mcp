@@ -231,3 +231,18 @@ def test_lint_exclude_is_validated(vault_dir):
     (vault_dir / ".vault-recall.toml").write_text('lint_exclude = "archive"\n')
     with pytest.raises(ConfigError):
         load_config(str(vault_dir))
+
+
+def test_non_scalar_name_or_description_counts_as_missing(cfg, vault_dir):
+    write_note(vault_dir, "listy.md", "---\nname: [a, b]\ndescription: {x: 1}\n---\n")
+    messages = [f.message for f in by_code(run_lint(cfg))["VR003"] if f.path == "listy.md"]
+    assert sorted(messages) == [
+        "missing required field 'description'",
+        "missing required field 'name'",
+    ]
+
+
+def test_alias_in_frontmatter_is_invalid_frontmatter(cfg, vault_dir):
+    write_note(vault_dir, "aliased.md", "---\nname: &a aliased\ndescription: *a\n---\n")
+    messages = [f.message for f in by_code(run_lint(cfg))["VR003"] if f.path == "aliased.md"]
+    assert messages == ["frontmatter is not a valid YAML mapping"]

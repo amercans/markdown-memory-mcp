@@ -68,7 +68,7 @@ def test_empty_file(tmp_path):
 def test_non_string_values_are_coerced(tmp_path):
     path = write_note(tmp_path, "n.md", "---\nname: 2024\ndescription: true\n---\n")
     note = parse_note(path, tmp_path)
-    assert note.name == "2024" and note.description == "True"
+    assert note.name == "2024" and note.description == ""  # booleans are not text
 
 
 def test_oversized_file_is_skipped(tmp_path):
@@ -243,3 +243,22 @@ def test_elided_and_placeholder_paths_are_skipped(tmp_path):
     )
     found = [p for _, p in backticked_paths(note_from(tmp_path, body))]
     assert found == ["~/notes/MMM.md", "~/notes/real-DDay.md"]
+
+
+def test_aliases_and_anchors_make_the_frontmatter_invalid():
+    for text in ("a: &x 1\nb: *x", "a: &x [1]", "a: *nothing"):
+        assert parse_frontmatter(f"---\n{text}\n---\nbody")[2] == "broken"
+
+
+def test_name_and_description_accept_only_scalars_and_are_shortened(tmp_path):
+    path = write_note(tmp_path, "n.md", "---\nname: [a, b]\ndescription: {x: 1}\n---\n")
+    note = parse_note(path, tmp_path)
+    assert note.name is None and note.description == ""
+    path = write_note(tmp_path, "m.md", f"---\nname: {'n' * 400}\ndescription: {'d ' * 400}\n---\n")
+    note = parse_note(path, tmp_path)
+    assert len(note.name) == 300 and len(note.description) == 300
+
+
+def test_dates_are_accepted_as_text(tmp_path):
+    path = write_note(tmp_path, "d.md", "---\nname: 2026-11-16\n---\n")
+    assert parse_note(path, tmp_path).name == "2026-11-16"

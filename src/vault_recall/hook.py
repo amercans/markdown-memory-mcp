@@ -22,6 +22,7 @@ from .text import fold, words
 from .vault import Resolver
 
 MIN_WORDS = 3
+MAX_CONTEXT_CHARS = 4000
 SESSION_TTL_SECONDS = 7 * 24 * 3600
 LOG_MAX_BYTES = 64_000
 _DEFAULT = object()
@@ -127,10 +128,20 @@ def handle(payload: object, cfg: Config, factory: EmbedderFactory | None) -> str
         return None
 
     lines = [HEADER]
+    size = len(HEADER)
+    shown = []
     for hit in chosen:
         note = hit.note
-        desc = f" — {note.description}" if note.description else ""
-        lines.append(f"- {note.label}{desc} ({note.path})")
+        desc = f" \u2014 {note.description}" if note.description else ""
+        line = f"- {note.label}{desc} ({note.path})"
+        if size + 1 + len(line) > MAX_CONTEXT_CHARS:
+            break
+        lines.append(line)
+        shown.append(hit)
+        size += 1 + len(line)
+    if not shown:
+        return None
+    chosen = shown
     if state:
         _remember(state, seen | {h.note.rel for h in chosen})
     return json.dumps(

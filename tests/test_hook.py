@@ -273,3 +273,36 @@ def test_embedding_only_matches_must_be_strong(indexed, vault_dir):
     assert dropped is None or str(top.note.path) not in context(dropped)
     kept = call(configure(top.cosine - 0.01), prompt, session="other")
     assert str(top.note.path) in context(kept)
+
+
+def test_alias_bomb_is_rejected_quickly_and_output_is_bounded(indexed, vault_dir):
+    levels = ["a0: &a0 [lol, lol, lol, lol, lol, lol, lol, lol, lol]"]
+    levels += [f"a{i}: &a{i} [{', '.join([f'*a{i - 1}'] * 9)}]" for i in range(1, 12)]
+    write_note(
+        vault_dir,
+        "bomb.md",
+        "---\nname: bomb\ndescription: sourdough starter alive\n" + "\n".join(levels) + "\n---\n"
+        "sourdough starter alive",
+    )
+    started = time.monotonic()
+    out = call(indexed, PROMPT)
+    assert time.monotonic() - started < 5
+    assert out is not None
+    assert len(context(out)) <= hook.MAX_CONTEXT_CHARS
+
+
+def test_context_is_capped(vault_dir):
+    for i in range(30):
+        write_note(
+            vault_dir,
+            f"long-{i}.md",
+            f"---\nname: long-{i}\ndescription: {'sourdough starter ' * 40}\n---\nsourdough\n",
+        )
+    (vault_dir / ".vault-recall.toml").write_text(
+        "min_similarity = -1.0\nrelative_margin = 2.0\nstrong_similarity = -1.0\nk = 50\n"
+    )
+    cfg = load_config(str(vault_dir))
+    Store(cfg.vault, cfg.model).update(load_vault(cfg).notes, HashingEmbedder())
+    text = context(call(cfg, "sourdough starter feeding schedule"))
+    assert len(text) <= hook.MAX_CONTEXT_CHARS
+    assert text.count("\n- ") >= 5  # it still lists several notes, then stops

@@ -88,7 +88,10 @@ def _check_frontmatter(cfg: Config, vault: Vault, add) -> None:
             add("VR003", "error", note, 1, "frontmatter is not a valid YAML mapping")
         else:
             for key in cfg.required_fields:
-                if note.meta.get(key) in (None, "", [], {}):
+                value = {"name": note.name, "description": note.description}.get(
+                    key, note.meta.get(key)
+                )
+                if value in (None, "", [], {}):
                     add("VR003", "error", note, 1, f"missing required field '{key}'")
         if note.name:
             by_name[note.name].append(note)

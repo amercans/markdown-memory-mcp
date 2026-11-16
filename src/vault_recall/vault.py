@@ -6,6 +6,7 @@ import hashlib
 import os
 import re
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -23,6 +24,27 @@ _MDLINK = re.compile(r"(?<!!)\[[^\[\]\n]*\]\(\s*(<[^>\n]+>|[^()\s]+)(?:\s+\"[^\"
 _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 
 
+FIELD_CHARS = 300
+
+
+class _NoAliasLoader(yaml.SafeLoader):
+    """SafeLoader that refuses anchors and aliases, which can expand into a billion nodes."""
+
+    def compose_node(self, parent, index):
+        event = self.peek_event()
+        if getattr(event, "anchor", None) is not None:
+            raise yaml.YAMLError("anchors and aliases are not allowed in frontmatter")
+        return super().compose_node(parent, index)
+
+
+def _scalar_text(value: object) -> str | None:
+    """Text of a str, int, float or date value, shortened. Anything else counts as missing."""
+    if isinstance(value, bool) or not isinstance(value, str | int | float | date):
+        return None
+    text = " ".join(str(value).split())
+    return text[:FIELD_CHARS] or None
+
+
 @dataclass(frozen=True)
 class Note:
     path: Path  # absolute
@@ -38,13 +60,11 @@ class Note:
 
     @property
     def name(self) -> str | None:
-        value = self.meta.get("name")
-        return str(value).strip() if value not in (None, "") else None
+        return _scalar_text(self.meta.get("name"))
 
     @property
     def description(self) -> str:
-        value = self.meta.get("description")
-        return " ".join(str(value).split()) if value not in (None, "") else ""
+        return _scalar_text(self.meta.get("description")) or ""
 
     @property
     def title(self) -> str:
@@ -78,7 +98,7 @@ def parse_frontmatter(text: str) -> tuple[dict, str, str, int]:
             raw = "\n".join(lines[1:end])
             body = "\n".join(lines[end + 1 :])
             try:
-                meta = yaml.safe_load(raw) if raw.strip() else {}
+                meta = yaml.load(raw, Loader=_NoAliasLoader) if raw.strip() else {}
             except yaml.YAMLError:
                 return {}, body, "broken", end + 2
             if not isinstance(meta, dict):
