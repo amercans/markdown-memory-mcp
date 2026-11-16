@@ -127,7 +127,6 @@ def test_write_note_roundtrip(writable, vault_dir):
         "type": "reference",
     }
     assert body.strip() == "Body text."
-    assert (vault_dir / "kitchen-scale.md").stat().st_mode & 0o777 == 0o644
     assert writable.read_note("kitchen-scale")["description"].startswith("Calibrate")
 
 
@@ -233,3 +232,16 @@ def test_every_tool_has_a_description_with_its_arguments(writable):
         assert name in tools["search_notes"].description
     for name in ("description", "body", "overwrite"):
         assert name in tools["write_note"].description
+
+
+def test_new_notes_follow_the_umask_and_overwrites_keep_the_mode(writable, vault_dir):
+    old = os.umask(0o027)
+    try:
+        writable.write_note("masked", "d", "b")
+    finally:
+        os.umask(old)
+    path = vault_dir / "masked.md"
+    assert path.stat().st_mode & 0o777 == 0o640
+    path.chmod(0o600)
+    writable.write_note("masked", "d2", "b2", overwrite=True)
+    assert path.stat().st_mode & 0o777 == 0o600

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import os
 import re
-import tempfile
+import stat
+import uuid
 from pathlib import Path
 
 import yaml
@@ -137,12 +138,16 @@ class VaultTools:
         front = yaml.safe_dump(meta, sort_keys=False, allow_unicode=True, width=10_000)
         text = f"---\n{front}---\n\n{body.strip()}\n"
 
-        fd, tmp = tempfile.mkstemp(dir=self.root, prefix=".write-note-")
+        # mkstemp would force mode 0600. Creating the file with 0666 lets the umask decide,
+        # as for any file the user creates.
+        tmp = str(self.root / f".write-note-{uuid.uuid4().hex}")
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
         try:
             with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
                 handle.write(text)
-            os.chmod(tmp, 0o644)
             if overwrite:
+                if target.exists():
+                    os.chmod(tmp, stat.S_IMODE(target.stat().st_mode))
                 os.replace(tmp, target)
             else:
                 # link() fails if the target appeared since the check above.
