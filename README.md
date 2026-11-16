@@ -142,7 +142,7 @@ The hook is built never to get in the way of a prompt:
 - It does nothing until an index exists. It never downloads a model and never builds an index from scratch.
 - It updates the index itself only when at most `hook_max_updates` files changed. If more changed, it uses the index as it is. Run `vault-recall index` to catch up.
 - It skips notes that an index file already links to, since those are in context anyway, and notes it already injected in the same session.
-- It applies `min_similarity` to the cosine score.
+- It applies `min_similarity` and `relative_margin` to the cosine score.
 - Any error is written as one line to `hook.log` in the cache directory, and the hook exits 0 without output.
 
 A call takes under a second on the fixture vault, most of it loading the model.
@@ -206,7 +206,8 @@ index_files = ["MEMORY.md"]
 exclude = [".obsidian/**", ".trash/**"]
 model = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 k = 3
-min_similarity = 0.35
+min_similarity = 0.40
+relative_margin = 0.08
 required_fields = ["name", "description"]
 max_index_line = 200
 hook_max_updates = 20
@@ -223,7 +224,8 @@ hard = 15000
 | `exclude` | `[".obsidian/**", ".trash/**"]` | Glob patterns, relative to the vault, for files to ignore. Setting it replaces the default. |
 | `model` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | A multilingual model that fastembed supports, for example `minishlab/potion-multilingual-128M`. Changing it builds a new index. |
 | `k` | `3` | Results for `search` and the hook. |
-| `min_similarity` | `0.35` | Minimum cosine for the hook to inject a note. Without embeddings, any BM25 match counts. |
+| `min_similarity` | `0.40` | Minimum cosine for the hook to inject a note. Without embeddings, any BM25 match counts. |
+| `relative_margin` | `0.08` | The hook injects a note only if its cosine is within this distance of the best cosine over all notes, including notes it skips because an index file already links them. If the best match is already in context, weaker notes are not used as filler. |
 | `required_fields` | `["name", "description"]` | Frontmatter fields checked by VR003. |
 | `index_budget_bytes` | `soft = 13000`, `hard = 15000` | Size limits for index files, checked by VR007. |
 | `max_index_line` | `200` | Longest allowed index line, checked by VR010. |

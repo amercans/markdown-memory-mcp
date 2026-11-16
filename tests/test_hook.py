@@ -229,3 +229,23 @@ def test_log_failure_never_raises(monkeypatch, tmp_path):
     blocker = tmp_path / "file"
     blocker.write_text("x")
     hook.log_failure(RuntimeError("x"), root=blocker / "sub")
+
+
+def test_nothing_is_injected_when_the_best_match_is_already_in_context(indexed):
+    # The nginx note is linked from MEMORY.md, so it is skipped. The notes below it are far
+    # weaker, and must not be injected as filler.
+    prompt = "cache control headers for static assets served by nginx"
+    assert call(indexed, prompt) is None
+
+
+def test_relative_margin_decides_how_close_a_runner_up_must_be(indexed, vault_dir):
+    prompt = "cache control headers for static assets served by nginx"
+    (vault_dir / ".vault-recall.toml").write_text("min_similarity = 0.0\nrelative_margin = 2.0\n")
+    wide = call(load_config(str(vault_dir)), prompt)
+    assert wide is not None and "nginx-cache-headers.md)" not in context(wide)
+
+
+def test_runner_up_within_the_margin_is_kept(indexed):
+    # The unlisted near-duplicate is about as close as the listed note it copies.
+    prompt = "take a database snapshot and verify it restores before running schema migrations"
+    assert "backup-before-migrations-old" in context(call(indexed, prompt))

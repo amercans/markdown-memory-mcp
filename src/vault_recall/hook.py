@@ -98,16 +98,26 @@ def handle(payload: object, cfg: Config, factory: EmbedderFactory | None) -> str
     }
     state = _session_file(store, session_id) if isinstance(session_id, str) and session_id else None
     seen = _injected(state) if state else set()
-    exclude |= seen
+    skip = exclude | seen
 
+    # Rank over every note, so that a strong match that is skipped (already in context)
+    # still sets the bar: weaker notes must be close to it, or nothing is injected.
+    hits = corpus.search(prompt, k=None)
+    cosines = [h.cosine for h in hits if h.cosine is not None]
+    floor = cfg.min_similarity
+    if cosines:
+        floor = max(floor, max(cosines) - cfg.relative_margin)
     chosen = []
-    for hit in corpus.search(prompt, k=None, exclude=exclude):
-        if hit.cosine is not None:
-            ok = hit.cosine >= cfg.min_similarity
-        else:
-            ok = not corpus.hybrid and hit.bm25 > 0
-        if ok:
-            chosen.append(hit)
+    for hit in hits:
+        if hit.note.rel in skip:
+            continue
+        if hit.cosine is None:
+            # No vector for this note. Lexical matches count only when there are no embeddings.
+            if corpus.hybrid or hit.bm25 <= 0:
+                continue
+        elif hit.cosine < floor:
+            continue
+        chosen.append(hit)
         if len(chosen) == cfg.k:
             break
     if not chosen:

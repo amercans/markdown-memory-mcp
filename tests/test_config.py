@@ -9,7 +9,7 @@ def test_defaults(vault_dir):
     assert cfg.exclude == (".obsidian/**", ".trash/**")
     assert (cfg.k, cfg.min_similarity, cfg.max_index_line, cfg.hook_max_updates) == (
         3,
-        0.35,
+        0.40,
         200,
         20,
     )

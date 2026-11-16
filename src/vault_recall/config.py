@@ -23,7 +23,8 @@ class Config:
     exclude: tuple[str, ...] = (".obsidian/**", ".trash/**")
     model: str = DEFAULT_MODEL
     k: int = 3
-    min_similarity: float = 0.35
+    min_similarity: float = 0.40
+    relative_margin: float = 0.08
     required_fields: tuple[str, ...] = ("name", "description")
     budget_soft: int = 13000
     budget_hard: int = 15000
@@ -38,6 +39,7 @@ _KEYS = {
     "model",
     "k",
     "min_similarity",
+    "relative_margin",
     "required_fields",
     "index_budget_bytes",
     "max_index_line",
@@ -112,6 +114,7 @@ def load_config(
     for key, kind, lo, hi in (
         ("k", int, 1, 50),
         ("min_similarity", float, -1.0, 1.0),
+        ("relative_margin", float, 0.0, 2.0),
         ("max_index_line", int, 20, None),
         ("hook_max_updates", int, 0, None),
         ("duplicate_similarity", float, 0.0, 1.0),

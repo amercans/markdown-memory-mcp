@@ -34,7 +34,7 @@ Only PyYAML is a hard dependency. numpy and fastembed (`embed`) and the MCP SDK 
 1. Parse stdin. Skip slash commands, prompts under three words and short acknowledgements.
 2. Build the corpus with `require_index`: if embeddings are installed but no index exists, stop. The hook never builds an index and never downloads a model; the model is loaded with `local_files_only`.
 3. Re-embed changed files only if there are at most `hook_max_updates`. Otherwise use the stale index. Notes without a current vector can then only match lexically, and the hook refuses them (see invariants).
-4. Rank, drop notes that an index file links to and notes already injected in this session, apply `min_similarity`, keep `k`.
+4. Rank over all notes and find the best cosine. Then drop notes that an index file links to and notes already injected in this session, and keep up to `k` of the rest whose cosine is at least `min_similarity` and within `relative_margin` of the best. A strong match that is skipped therefore still stops weaker notes from being injected as filler.
 5. Print the JSON object, record what was injected in the session state file.
 
 **MCP.** `VaultTools` holds the logic. `build_server` registers bound methods with FastMCP, and registers `write_note` only if `allow_write` is true. Tests call the methods directly.
