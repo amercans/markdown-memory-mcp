@@ -1,0 +1,30 @@
+"""Runs the real default model. Downloads it on first use, so it is skipped by default:
+``uv run pytest -m slow``.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from vault_recall.config import DEFAULT_MODEL
+from vault_recall.embed import FastEmbedder
+from vault_recall.search import build_corpus
+from vault_recall.store import Store, cache_root
+from vault_recall.vault import load_vault
+
+pytestmark = pytest.mark.slow
+
+
+def test_meaning_beats_exact_words(cfg):
+    embedder = FastEmbedder(DEFAULT_MODEL, cache_root() / "models", local_only=False)
+    Store(cfg.vault, cfg.model).update(load_vault(cfg).notes, embedder)
+    corpus = build_corpus(cfg, lambda: embedder)
+    assert corpus.hybrid
+
+    # No word of the query appears in the note.
+    top = corpus.search("how do I keep my bread culture alive", k=3)
+    assert "sourdough-starter-feeding" in [h.note.stem for h in top]
+
+    # Turkish query against the Turkish note.
+    top = corpus.search("simit nasıl yapılır", k=1)[0]
+    assert top.note.stem == "istanbul-simit"
