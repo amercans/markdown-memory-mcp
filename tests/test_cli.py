@@ -232,3 +232,28 @@ def test_environment_vault_is_named_as_the_source(tmp_path, monkeypatch, capsys)
 def test_healthy_vault_prints_no_warning(vault_dir, no_embeddings, capsys):
     cli.main(["search", "nginx", "--vault", str(vault_dir)])
     assert "vault-recall:" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("value", ["0", "-3", "x", "1.5"])
+def test_k_must_be_a_positive_whole_number(vault_dir, value, capsys):
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["search", "nginx", "-k", value, "--vault", str(vault_dir)])
+    assert exc.value.code == 2
+    assert "-k" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("query", ["", "   "])
+def test_empty_query_is_rejected(vault_dir, query, capsys):
+    assert cli.main(["search", query, "--vault", str(vault_dir)]) == 2
+    assert "query is empty" in capsys.readouterr().err
+
+
+def test_help_describes_the_tool_with_examples(capsys):
+    with pytest.raises(SystemExit):
+        cli.main(["--help"])
+    out = capsys.readouterr().out
+    assert "long-term memory" in out and "examples:" in out
+    assert "https://github.com/amercans/vault-recall" in out
+    with pytest.raises(SystemExit):
+        cli.main(["search", "--help"])
+    assert "what to look for" in capsys.readouterr().out

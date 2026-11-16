@@ -16,6 +16,27 @@ from .search import build_corpus
 from .store import Store, StoreError, cache_root
 from .vault import Vault, load_vault
 
+EPILOG = """\
+examples:
+  vault-recall index --vault ~/notes
+  vault-recall search "how do I keep the starter alive" --vault ~/notes
+  vault-recall lint --vault ~/notes --fail-on warning
+  vault-recall serve --vault ~/notes
+
+The vault is --vault, else $VAULT_RECALL_VAULT, else the current directory.
+Documentation: https://github.com/amercans/vault-recall#readme
+"""
+
+
+def _positive_int(text: str) -> int:
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number") from None
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be 1 or more")
+    return value
+
 
 def _common() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
@@ -27,7 +48,13 @@ def _common() -> argparse.ArgumentParser:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="vault-recall",
-        description="Recall, lint and serve a folder of Markdown notes used as AI memory.",
+        description=(
+            "Hybrid recall, lint and an MCP server for a folder of Markdown notes used as an "
+            "AI assistant's long-term memory. Files stay the source of truth; the vault is "
+            "never written to."
+        ),
+        epilog=EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"vault-recall {__version__}")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
@@ -36,8 +63,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("index", parents=[common], help="build or update the embedding index")
 
     search = sub.add_parser("search", parents=[common], help="search the vault")
-    search.add_argument("query")
-    search.add_argument("-k", type=int, help="number of results (default: config k)")
+    search.add_argument("query", help="what to look for, in natural language")
+    search.add_argument(
+        "-k", type=_positive_int, help="number of results, 1 or more (default: config k)"
+    )
     search.add_argument("--json", action="store_true", help="print results as JSON")
 
     lint_cmd = sub.add_parser("lint", parents=[common], help="check the vault for problems")
@@ -110,6 +139,9 @@ def cmd_index(cfg: Config, args: argparse.Namespace) -> int:
 
 
 def cmd_search(cfg: Config, args: argparse.Namespace) -> int:
+    if not args.query.strip():
+        print("vault-recall: the query is empty", file=sys.stderr)
+        return 2
     # Searching never downloads the model; only `index` does.
     corpus = build_corpus(cfg, _factory(cfg, local_only=True))
     if corpus is None:  # not reachable without require_index; keeps the type honest
