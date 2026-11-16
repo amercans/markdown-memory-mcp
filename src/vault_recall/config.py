@@ -26,6 +26,7 @@ class Config:
     k: int = 3
     min_similarity: float = 0.40
     relative_margin: float = 0.08
+    strong_similarity: float = 0.55
     required_fields: tuple[str, ...] = ("name", "description")
     budget_soft: int = 13000
     budget_hard: int = 15000
@@ -42,6 +43,7 @@ _KEYS = {
     "k",
     "min_similarity",
     "relative_margin",
+    "strong_similarity",
     "required_fields",
     "index_budget_bytes",
     "max_index_line",
@@ -117,6 +119,7 @@ def load_config(
         ("k", int, 1, 50),
         ("min_similarity", float, -1.0, 1.0),
         ("relative_margin", float, 0.0, 2.0),
+        ("strong_similarity", float, -1.0, 1.0),
         ("max_index_line", int, 20, None),
         ("hook_max_updates", int, 0, None),
         ("duplicate_similarity", float, 0.0, 1.0),

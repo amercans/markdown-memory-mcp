@@ -117,6 +117,9 @@ def handle(payload: object, cfg: Config, factory: EmbedderFactory | None) -> str
                 continue
         elif hit.cosine < floor:
             continue
+        elif hit.bm25 <= 0 and hit.cosine < cfg.strong_similarity:
+            # Embeddings alone are too loose: without a shared word the match must be strong.
+            continue
         chosen.append(hit)
         if len(chosen) == cfg.k:
             break

@@ -249,3 +249,27 @@ def test_runner_up_within_the_margin_is_kept(indexed):
     # The unlisted near-duplicate is about as close as the listed note it copies.
     prompt = "take a database snapshot and verify it restores before running schema migrations"
     assert "backup-before-migrations-old" in context(call(indexed, prompt))
+
+
+def test_embedding_only_matches_must_be_strong(indexed, vault_dir):
+    # The query shares no word with the vault, so bm25 is 0 for every note and the cosine
+    # alone decides. Probe the real cosines first, then place the threshold around one.
+    from vault_recall.search import build_corpus
+
+    prompt = "zzzzqq wwwwxx yyyyvv"
+    corpus = build_corpus(indexed, lambda: HashingEmbedder())
+    listed = {"backup-before-migrations", "static-site-deploy", "home-lab-dns"}
+    listed |= {"nginx-cache-headers", "bread-baking-schedule"}  # linked from MEMORY.md
+    top = next(h for h in corpus.search(prompt, k=None) if h.note.stem not in listed)
+    assert top.bm25 == 0 and top.cosine is not None
+
+    def configure(strong):
+        (vault_dir / ".vault-recall.toml").write_text(
+            f"min_similarity = -1.0\nrelative_margin = 2.0\nstrong_similarity = {strong}\nk = 50\n"
+        )
+        return load_config(str(vault_dir))
+
+    dropped = call(configure(top.cosine + 0.01), prompt)
+    assert dropped is None or str(top.note.path) not in context(dropped)
+    kept = call(configure(top.cosine - 0.01), prompt, session="other")
+    assert str(top.note.path) in context(kept)
