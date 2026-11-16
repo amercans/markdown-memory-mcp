@@ -1,4 +1,4 @@
-"""Embedding backends. numpy and fastembed are optional (``vault-recall[embed]``)."""
+"""Embedding backends. numpy and fastembed are optional (``markdown-memory-mcp[embed]``)."""
 
 from __future__ import annotations
 
@@ -14,9 +14,7 @@ from .text import tokenize
 if TYPE_CHECKING:
     import numpy as np
 
-INSTALL_COMMAND = (
-    'uv tool install "vault-recall[all] @ git+https://github.com/amercans/vault-recall"'
-)
+INSTALL_COMMAND = 'uv tool install "markdown-memory-mcp[all] @ git+https://github.com/amercans/markdown-memory-mcp"'
 INSTALL_HINT = f"install the extras with: {INSTALL_COMMAND}"
 
 

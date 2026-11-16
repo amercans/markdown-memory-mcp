@@ -4,10 +4,10 @@
 
 Please do not open a public issue. Use GitHub's private reporting instead:
 **Security -> Report a vulnerability** on this repository
-(<https://github.com/amercans/vault-recall/security/advisories/new>).
+(<https://github.com/amercans/markdown-memory-mcp/security/advisories/new>).
 
 Include what you found, how to reproduce it and the version you tested
-(`vault-recall --version`). You can expect an acknowledgement within a week.
+(`markdown-memory-mcp --version`). You can expect an acknowledgement within a week.
 
 ## Scope
 

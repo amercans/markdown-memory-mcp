@@ -5,9 +5,9 @@ import os
 import pytest
 import yaml
 
-from vault_recall.config import load_config
-from vault_recall.mcp_server import ToolError, VaultTools, build_server
-from vault_recall.vault import parse_frontmatter
+from markdown_memory_mcp.config import load_config
+from markdown_memory_mcp.mcp_server import ToolError, VaultTools, build_server
+from markdown_memory_mcp.vault import parse_frontmatter
 
 
 @pytest.fixture
@@ -181,7 +181,7 @@ def test_longest_valid_slug_is_accepted(writable):
 
 
 def test_index_file_is_never_written(vault_dir):
-    (vault_dir / ".vault-recall.toml").write_text('index_files = ["recall.md", "MEMORY.md"]\n')
+    (vault_dir / ".markdown-memory.toml").write_text('index_files = ["recall.md", "MEMORY.md"]\n')
     (vault_dir / "recall.md").write_text("# Index\n")
     tools = VaultTools(load_config(str(vault_dir)), None, allow_write=True)
     before = (vault_dir / "recall.md").read_bytes()

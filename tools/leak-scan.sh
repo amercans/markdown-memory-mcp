@@ -6,10 +6,10 @@
 #   - real home-directory paths and tracked symbolic links,
 #   - private key material,
 #   - every line of your own pattern list (case-insensitive substring match), kept OUTSIDE
-#     the repository: $VR_LEAK_PATTERNS or ~/.config/vault-recall/forbidden-patterns.txt
+#     the repository: $MARKDOWN_MEMORY_LEAK_PATTERNS or ~/.config/markdown-memory-mcp/forbidden-patterns.txt
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
-LIST="${VR_LEAK_PATTERNS:-$HOME/.config/vault-recall/forbidden-patterns.txt}"
+LIST="${MARKDOWN_MEMORY_LEAK_PATTERNS:-$HOME/.config/markdown-memory-mcp/forbidden-patterns.txt}"
 found=0
 report() { echo "leak-scan: $1"; found=1; }
 

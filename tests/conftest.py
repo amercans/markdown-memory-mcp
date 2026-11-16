@@ -5,16 +5,16 @@ from pathlib import Path
 
 import pytest
 
-from vault_recall.config import Config, load_config
-from vault_recall.embed import HashingEmbedder
+from markdown_memory_mcp.config import Config, load_config
+from markdown_memory_mcp.embed import HashingEmbedder
 
 FIXTURE = Path(__file__).parent / "fixtures" / "vault"
 
 
 @pytest.fixture(autouse=True)
 def isolated_env(tmp_path, monkeypatch):
-    monkeypatch.setenv("VAULT_RECALL_CACHE", str(tmp_path / "cache"))
-    monkeypatch.delenv("VAULT_RECALL_VAULT", raising=False)
+    monkeypatch.setenv("MARKDOWN_MEMORY_CACHE", str(tmp_path / "cache"))
+    monkeypatch.delenv("MARKDOWN_MEMORY_VAULT", raising=False)
     monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
 
 

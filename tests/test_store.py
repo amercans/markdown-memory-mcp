@@ -7,9 +7,9 @@ import numpy as np
 import pytest
 
 from conftest import write_note
-from vault_recall.embed import HashingEmbedder
-from vault_recall.store import Store, StoreError, cache_root
-from vault_recall.vault import load_vault
+from markdown_memory_mcp.embed import HashingEmbedder
+from markdown_memory_mcp.store import Store, StoreError, cache_root
+from markdown_memory_mcp.vault import load_vault
 
 
 class CountingEmbedder(HashingEmbedder):
@@ -105,10 +105,10 @@ def test_cache_inside_the_vault_is_refused(cfg):
 
 
 def test_cache_root_environment_order(tmp_path):
-    assert cache_root({"VAULT_RECALL_CACHE": str(tmp_path / "a")}) == tmp_path / "a"
+    assert cache_root({"MARKDOWN_MEMORY_CACHE": str(tmp_path / "a")}) == tmp_path / "a"
     env = {"XDG_CACHE_HOME": str(tmp_path / "x")}
-    assert cache_root(env) == tmp_path / "x" / "vault-recall"
-    assert cache_root({}).parts[-2:] == (".cache", "vault-recall")
+    assert cache_root(env) == tmp_path / "x" / "markdown-memory-mcp"
+    assert cache_root({}).parts[-2:] == (".cache", "markdown-memory-mcp")
 
 
 def test_vault_is_not_written_to(cfg, vault_dir):
@@ -154,7 +154,7 @@ def test_no_temp_files_left_behind(cfg):
 
 
 def test_quiet_hub_sets_defaults_without_overriding(monkeypatch):
-    from vault_recall.embed import quiet_hub
+    from markdown_memory_mcp.embed import quiet_hub
 
     monkeypatch.delenv("HF_HUB_DISABLE_TELEMETRY", raising=False)
     monkeypatch.setenv("HF_HUB_VERBOSITY", "info")
@@ -164,7 +164,7 @@ def test_quiet_hub_sets_defaults_without_overriding(monkeypatch):
 
 
 def test_crash_between_the_two_writes_is_detected_and_repaired(cfg, vault_dir, monkeypatch):
-    from vault_recall import store as store_module
+    from markdown_memory_mcp import store as store_module
 
     store = make_store(cfg)
     emb = CountingEmbedder()
@@ -207,3 +207,31 @@ def test_meta_records_the_vectors_hash(cfg):
         meta["vectors_sha256"]
         == hashlib.sha256((store.dir / "vectors.npy").read_bytes()).hexdigest()
     )
+
+
+def test_old_cache_directory_is_adopted_once(tmp_path):
+    base = tmp_path / "xdg"
+    old = base / "vault-recall"
+    (old / "models").mkdir(parents=True)
+    (old / "models" / "weights").write_text("x")
+    env = {"XDG_CACHE_HOME": str(base)}
+    root = cache_root(env)
+    assert root == base / "markdown-memory-mcp"
+    assert (root / "models" / "weights").read_text() == "x" and not old.exists()
+    assert cache_root(env) == root  # a second call changes nothing
+
+
+def test_old_cache_is_left_alone_when_the_new_one_exists(tmp_path):
+    base = tmp_path / "xdg"
+    (base / "vault-recall").mkdir(parents=True)
+    (base / "markdown-memory-mcp").mkdir()
+    cache_root({"XDG_CACHE_HOME": str(base)})
+    assert (base / "vault-recall").exists()
+
+
+def test_explicit_cache_directory_skips_migration(tmp_path):
+    (tmp_path / "xdg" / "vault-recall").mkdir(parents=True)
+    explicit = tmp_path / "chosen"
+    env = {"MARKDOWN_MEMORY_CACHE": str(explicit), "XDG_CACHE_HOME": str(tmp_path / "xdg")}
+    assert cache_root(env) == explicit
+    assert (tmp_path / "xdg" / "vault-recall").exists()

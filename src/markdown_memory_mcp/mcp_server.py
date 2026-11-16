@@ -210,7 +210,7 @@ def build_server(tools: VaultTools):
     except ImportError as exc:
         raise ImportError(f"the MCP server needs the mcp extra; {INSTALL_HINT}") from exc
 
-    server = FastMCP("vault-recall")
+    server = FastMCP("markdown-memory-mcp")
     server.tool()(tools.search_notes)
     server.tool()(tools.read_note)
     server.tool()(tools.backlinks)

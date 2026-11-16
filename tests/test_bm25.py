@@ -1,4 +1,4 @@
-from vault_recall.bm25 import BM25
+from markdown_memory_mcp.bm25 import BM25
 
 
 def docs(*texts):

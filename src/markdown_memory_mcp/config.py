@@ -1,14 +1,16 @@
-"""Configuration: defaults, ``.vault-recall.toml`` and vault location."""
+"""Configuration: defaults, ``.markdown-memory.toml`` and vault location."""
 
 from __future__ import annotations
 
 import os
+import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-CONFIG_NAME = ".vault-recall.toml"
+CONFIG_NAME = ".markdown-memory.toml"
+LEGACY_CONFIG_NAME = ".vault-recall.toml"  # read for one release after the rename
 DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
@@ -54,7 +56,7 @@ _KEYS = {
 
 def resolve_vault(explicit: str | None, env: dict[str, str] | None = None) -> Path:
     env = os.environ if env is None else env
-    raw = explicit or env.get("VAULT_RECALL_VAULT")
+    raw = explicit or env.get("MARKDOWN_MEMORY_VAULT")
     path = Path(raw).expanduser() if raw else Path.cwd()
     path = path.resolve()
     if not path.is_dir():
@@ -92,6 +94,13 @@ def load_config(
 ) -> Config:
     root = resolve_vault(vault, env)
     path = Path(config_path).expanduser() if config_path else root / CONFIG_NAME
+    if not config_path and not path.is_file() and (root / LEGACY_CONFIG_NAME).is_file():
+        path = root / LEGACY_CONFIG_NAME
+        print(
+            f"markdown-memory-mcp: reading deprecated config file {LEGACY_CONFIG_NAME}; "
+            f"rename it to {CONFIG_NAME}",
+            file=sys.stderr,
+        )
     data: dict[str, Any] = {}
     if path.is_file():
         try:

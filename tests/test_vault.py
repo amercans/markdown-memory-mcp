@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 
 from conftest import write_note
-from vault_recall.config import load_config
-from vault_recall.vault import (
+from markdown_memory_mcp.config import load_config
+from markdown_memory_mcp.vault import (
     Link,
     Resolver,
     backticked_paths,
@@ -195,7 +195,7 @@ def test_glob_matching():
 
 
 def test_custom_exclude_in_config(vault_dir):
-    (vault_dir / ".vault-recall.toml").write_text('exclude = ["old-*.md"]\n')
+    (vault_dir / ".markdown-memory.toml").write_text('exclude = ["old-*.md"]\n')
     rels = {n.rel for n in load_vault(load_config(str(vault_dir))).notes}
     assert "old-router-firmware.md" not in rels
 

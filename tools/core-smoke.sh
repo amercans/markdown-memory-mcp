@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs vault-recall WITHOUT any extra into a throw-away environment and runs the commands
+# Installs markdown-memory-mcp WITHOUT any extra into a throw-away environment and runs the commands
 # that must work on BM25 alone. Proves the core install does not need numpy or fastembed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -7,11 +7,11 @@ ROOT="$PWD"
 VAULT="$ROOT/tests/fixtures/vault"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-export VAULT_RECALL_CACHE="$WORK/cache"
+export MARKDOWN_MEMORY_CACHE="$WORK/cache"
 
 uv venv --quiet "$WORK/venv"
 uv pip install --quiet --python "$WORK/venv/bin/python" "$ROOT"
-BIN="$WORK/venv/bin/vault-recall"
+BIN="$WORK/venv/bin/markdown-memory-mcp"
 if "$WORK/venv/bin/python" -c 'import numpy' 2>/dev/null; then
   echo "core-smoke: numpy is installed in the core environment" >&2
   exit 1
@@ -32,5 +32,5 @@ if "$BIN" index --vault "$VAULT" 2>"$WORK/err"; then
   echo "core-smoke: index should refuse without the embed extra" >&2
   exit 1
 fi
-grep -q 'vault-recall\[all\]' "$WORK/err"
+grep -q 'markdown-memory-mcp\[all\]' "$WORK/err"
 echo "core-smoke: ok"

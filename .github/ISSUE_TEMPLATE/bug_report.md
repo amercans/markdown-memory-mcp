@@ -12,7 +12,7 @@ labels: bug
 A minimal note or two that trigger it is the most useful thing you can attach.
 
 **Environment**
-- vault-recall version (`vault-recall --version`):
+- markdown-memory-mcp version (`markdown-memory-mcp --version`):
 - Python version and how you installed it:
 - Embeddings extra installed (yes / no), and the model if you changed it:
 - OS:

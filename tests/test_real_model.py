@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import pytest
 
-from vault_recall.config import DEFAULT_MODEL
-from vault_recall.embed import FastEmbedder
-from vault_recall.search import build_corpus
-from vault_recall.store import Store, cache_root
-from vault_recall.vault import load_vault
+from markdown_memory_mcp.config import DEFAULT_MODEL
+from markdown_memory_mcp.embed import FastEmbedder
+from markdown_memory_mcp.search import build_corpus
+from markdown_memory_mcp.store import Store, cache_root
+from markdown_memory_mcp.vault import load_vault
 
 pytestmark = pytest.mark.slow
 
@@ -40,7 +40,7 @@ def test_meaning_beats_exact_words(cfg):
 def test_hook_injects_with_default_thresholds(cfg, prompt):
     import json
 
-    from vault_recall import hook
+    from markdown_memory_mcp import hook
 
     embedder = FastEmbedder(DEFAULT_MODEL, cache_root() / "models", local_only=False)
     Store(cfg.vault, cfg.model).update(load_vault(cfg).notes, embedder)

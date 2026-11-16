@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from conftest import write_note
-from vault_recall.search import build_corpus, rrf_fuse
-from vault_recall.store import Store
-from vault_recall.vault import load_vault
+from markdown_memory_mcp.search import build_corpus, rrf_fuse
+from markdown_memory_mcp.store import Store
+from markdown_memory_mcp.vault import load_vault
 
 
 def test_rrf_fuse_sums_reciprocal_ranks():

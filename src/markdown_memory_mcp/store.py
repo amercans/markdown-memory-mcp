@@ -27,11 +27,24 @@ class StoreError(Exception):
 
 def cache_root(env: dict[str, str] | None = None) -> Path:
     env = os.environ if env is None else env
-    if env.get("VAULT_RECALL_CACHE"):
-        return Path(env["VAULT_RECALL_CACHE"]).expanduser()
+    if env.get("MARKDOWN_MEMORY_CACHE"):
+        return Path(env["MARKDOWN_MEMORY_CACHE"]).expanduser()
     if env.get("XDG_CACHE_HOME"):
-        return Path(env["XDG_CACHE_HOME"]).expanduser() / "vault-recall"
-    return Path.home() / ".cache" / "vault-recall"
+        base = Path(env["XDG_CACHE_HOME"]).expanduser()
+    else:
+        base = Path.home() / ".cache"
+    root = base / "markdown-memory-mcp"
+    _adopt_legacy_cache(base / "vault-recall", root)
+    return root
+
+
+def _adopt_legacy_cache(old: Path, new: Path) -> None:
+    """Move the cache of the project's former name, so the model is not downloaded again."""
+    try:
+        if old.is_dir() and not new.exists():
+            old.rename(new)
+    except OSError:
+        pass  # keep working with an empty cache; the next index rebuilds it
 
 
 def private_dir(path: Path) -> None:

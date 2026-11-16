@@ -11,13 +11,13 @@ import pytest
 
 WRAPPER = (
     "import sys; sys.modules['numpy'] = None; sys.modules['fastembed'] = None; "
-    "from vault_recall.cli import main; sys.exit(main(sys.argv[1:]))"
+    "from markdown_memory_mcp.cli import main; sys.exit(main(sys.argv[1:]))"
 )
 
 
 @pytest.fixture
 def run(vault_dir, tmp_path):
-    env = {**os.environ, "VAULT_RECALL_CACHE": str(tmp_path / "cache")}
+    env = {**os.environ, "MARKDOWN_MEMORY_CACHE": str(tmp_path / "cache")}
 
     def _run(*args, stdin=""):
         return subprocess.run(
@@ -56,4 +56,4 @@ def test_hook_without_numpy(run, tmp_path):
 def test_index_explains_the_missing_extra(run):
     proc = run("index")
     assert proc.returncode == 1
-    assert "vault-recall[all]" in proc.stderr
+    assert "markdown-memory-mcp[all]" in proc.stderr

@@ -7,9 +7,9 @@ import sys
 
 import pytest
 
-from vault_recall import __version__, cli, hook
-from vault_recall.embed import HashingEmbedder
-from vault_recall.store import Store
+from markdown_memory_mcp import __version__, cli, hook
+from markdown_memory_mcp.embed import HashingEmbedder
+from markdown_memory_mcp.store import Store
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def test_version(capsys):
     with pytest.raises(SystemExit) as exc:
         cli.main(["--version"])
     assert exc.value.code == 0
-    assert capsys.readouterr().out.strip() == f"vault-recall {__version__}"
+    assert capsys.readouterr().out.strip() == f"markdown-memory-mcp {__version__}"
 
 
 def test_a_command_is_required(capsys):
@@ -56,7 +56,7 @@ def test_index_reports_incremental_changes(vault_dir, fake_model, capsys):
 
 def test_index_without_the_extra_explains_how_to_install(vault_dir, no_embeddings, capsys):
     assert cli.main(["index", "--vault", str(vault_dir)]) == 1
-    assert "vault-recall[all]" in capsys.readouterr().err
+    assert "markdown-memory-mcp[all]" in capsys.readouterr().err
 
 
 def test_search_text_output(vault_dir, fake_model, capsys):
@@ -108,13 +108,13 @@ def test_lint_notes_when_near_duplicate_check_is_unavailable(vault_dir, no_embed
 def test_lint_runs_vr008_after_indexing(vault_dir, fake_model, monkeypatch, capsys):
     cli.main(["index", "--vault", str(vault_dir)])
     capsys.readouterr()
-    monkeypatch.setattr("vault_recall.lint.embeddings_installed", lambda: True)
+    monkeypatch.setattr("markdown_memory_mcp.lint.embeddings_installed", lambda: True)
     cli.main(["lint", "--vault", str(vault_dir), "--fail-on", "never"])
     assert "VR008" in capsys.readouterr().out
 
 
 def test_hook_command_reads_stdin(vault_dir, fake_model, monkeypatch, capsys):
-    (vault_dir / ".vault-recall.toml").write_text("min_similarity = 0.1\n")
+    (vault_dir / ".markdown-memory.toml").write_text("min_similarity = 0.1\n")
     cli.main(["index", "--vault", str(vault_dir)])
     capsys.readouterr()
     payload = json.dumps({"prompt": "how do I keep the sourdough starter alive", "session_id": "q"})
@@ -132,17 +132,17 @@ def test_hook_command_exits_zero_on_a_bad_vault(tmp_path, monkeypatch, capsys):
 
 def test_errors_are_friendly(tmp_path, capsys):
     assert cli.main(["lint", "--vault", str(tmp_path / "missing")]) == 2
-    assert capsys.readouterr().err.startswith("vault-recall: vault is not a directory")
+    assert capsys.readouterr().err.startswith("markdown-memory-mcp: vault is not a directory")
 
 
 def test_bad_config_is_reported(vault_dir, capsys):
-    (vault_dir / ".vault-recall.toml").write_text("k = 0\n")
+    (vault_dir / ".markdown-memory.toml").write_text("k = 0\n")
     assert cli.main(["search", "x", "--vault", str(vault_dir)]) == 2
     assert "k must be" in capsys.readouterr().err
 
 
 def test_vault_from_environment(vault_dir, no_embeddings, monkeypatch, capsys):
-    monkeypatch.setenv("VAULT_RECALL_VAULT", str(vault_dir))
+    monkeypatch.setenv("MARKDOWN_MEMORY_VAULT", str(vault_dir))
     assert cli.main(["search", "nginx"]) == 0
     assert "nginx-cache-headers" in capsys.readouterr().out
 
@@ -152,7 +152,7 @@ def test_missing_mcp_extra_is_explained(vault_dir, no_embeddings, monkeypatch, c
     monkeypatch.setitem(sys.modules, "mcp.server", None)
     monkeypatch.setitem(sys.modules, "mcp.server.fastmcp", None)
     assert cli.main(["serve", "--vault", str(vault_dir)]) == 2
-    assert "vault-recall[all]" in capsys.readouterr().err
+    assert "markdown-memory-mcp[all]" in capsys.readouterr().err
 
 
 def test_index_leaves_the_vault_untouched(vault_dir, fake_model):
@@ -164,12 +164,12 @@ def test_index_leaves_the_vault_untouched(vault_dir, fake_model):
 
 def test_module_entry_point(vault_dir):
     proc = subprocess.run(
-        [sys.executable, "-m", "vault_recall.cli", "--version"],
+        [sys.executable, "-m", "markdown_memory_mcp.cli", "--version"],
         capture_output=True,
         text=True,
         check=True,
     )
-    assert proc.stdout.startswith("vault-recall ")
+    assert proc.stdout.startswith("markdown-memory-mcp ")
 
 
 def test_search_never_downloads_the_model(vault_dir, fake_model, monkeypatch):
@@ -186,7 +186,7 @@ def test_search_never_downloads_the_model(vault_dir, fake_model, monkeypatch):
 
 
 def test_search_falls_back_when_the_model_is_missing(vault_dir, fake_model, monkeypatch, capsys):
-    from vault_recall.embed import EmbedUnavailable
+    from markdown_memory_mcp.embed import EmbedUnavailable
 
     cli.main(["index", "--vault", str(vault_dir)])
     capsys.readouterr()
@@ -224,14 +224,14 @@ def test_missing_index_file_is_reported(vault_dir, no_embeddings, capsys):
 def test_environment_vault_is_named_as_the_source(tmp_path, monkeypatch, capsys):
     empty = tmp_path / "empty"
     empty.mkdir()
-    monkeypatch.setenv("VAULT_RECALL_VAULT", str(empty))
+    monkeypatch.setenv("MARKDOWN_MEMORY_VAULT", str(empty))
     cli.main(["lint"])
-    assert "so $VAULT_RECALL_VAULT is used" in capsys.readouterr().err
+    assert "so $MARKDOWN_MEMORY_VAULT is used" in capsys.readouterr().err
 
 
 def test_healthy_vault_prints_no_warning(vault_dir, no_embeddings, capsys):
     cli.main(["search", "nginx", "--vault", str(vault_dir)])
-    assert "vault-recall:" not in capsys.readouterr().err
+    assert "markdown-memory-mcp:" not in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("value", ["0", "-3", "x", "1.5"])
@@ -253,7 +253,7 @@ def test_help_describes_the_tool_with_examples(capsys):
         cli.main(["--help"])
     out = capsys.readouterr().out
     assert "long-term memory" in out and "examples:" in out
-    assert "https://github.com/amercans/vault-recall" in out
+    assert "https://github.com/amercans/markdown-memory-mcp" in out
     with pytest.raises(SystemExit):
         cli.main(["search", "--help"])
     assert "what to look for" in capsys.readouterr().out
@@ -263,5 +263,6 @@ def test_install_hint_is_a_runnable_command(vault_dir, no_embeddings, capsys):
     cli.main(["index", "--vault", str(vault_dir)])
     err = capsys.readouterr().err
     assert (
-        'uv tool install "vault-recall[all] @ git+https://github.com/amercans/vault-recall"' in err
+        'uv tool install "markdown-memory-mcp[all] @ git+https://github.com/amercans/markdown-memory-mcp"'
+        in err
     )

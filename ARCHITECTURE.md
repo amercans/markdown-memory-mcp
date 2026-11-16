@@ -1,12 +1,12 @@
 # Architecture
 
-This document explains how vault-recall is put together, what it promises, what it protects against and why some choices were made the way they were.
+This document explains how markdown-memory-mcp is put together, what it promises, what it protects against and why some choices were made the way they were.
 
 ## Components
 
 | Module | Role |
 |---|---|
-| `config.py` | Defaults, `.vault-recall.toml` parsing and validation, vault location |
+| `config.py` | Defaults, `.markdown-memory.toml` parsing and validation, vault location |
 | `vault.py` | Note discovery, frontmatter, link extraction, link resolution |
 | `text.py` | Folding, tokenising and prefix stemming |
 | `bm25.py` | Okapi BM25 in pure Python |

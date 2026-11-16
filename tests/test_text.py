@@ -1,4 +1,4 @@
-from vault_recall.text import fold, stem, tokenize, words
+from markdown_memory_mcp.text import fold, stem, tokenize, words
 
 
 def test_fold_maps_dotted_and_dotless_i():

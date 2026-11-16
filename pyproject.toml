@@ -3,7 +3,7 @@ requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "vault-recall"
+name = "markdown-memory-mcp"
 version = "0.1.0"
 description = "Hybrid recall, lint and MCP server for a folder of Markdown notes used as an AI assistant's long-term memory."
 readme = "README.md"
@@ -29,18 +29,18 @@ mcp = ["mcp>=1.2,<2"]
 all = ["fastembed>=0.4", "numpy>=1.26", "mcp>=1.2,<2"]
 
 [project.scripts]
-vault-recall = "vault_recall.cli:main"
+markdown-memory-mcp = "markdown_memory_mcp.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/amercans/vault-recall"
-Issues = "https://github.com/amercans/vault-recall/issues"
-Changelog = "https://github.com/amercans/vault-recall/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/amercans/markdown-memory-mcp"
+Issues = "https://github.com/amercans/markdown-memory-mcp/issues"
+Changelog = "https://github.com/amercans/markdown-memory-mcp/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "fastembed>=0.4", "numpy>=1.26", "mcp>=1.2,<2", "types-PyYAML"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/vault_recall"]
+packages = ["src/markdown_memory_mcp"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src", "tests", "README.md", "LICENSE", "CHANGELOG.md", "ARCHITECTURE.md"]

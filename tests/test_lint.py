@@ -5,11 +5,18 @@ import json
 import pytest
 
 from conftest import write_note
-from vault_recall.cli import main
-from vault_recall.config import ConfigError, load_config
-from vault_recall.lint import Finding, exit_code, format_human, lint, stored_vectors, summarise
-from vault_recall.store import Store
-from vault_recall.vault import load_vault
+from markdown_memory_mcp.cli import main
+from markdown_memory_mcp.config import ConfigError, load_config
+from markdown_memory_mcp.lint import (
+    Finding,
+    exit_code,
+    format_human,
+    lint,
+    stored_vectors,
+    summarise,
+)
+from markdown_memory_mcp.store import Store
+from markdown_memory_mcp.vault import load_vault
 
 
 def run_lint(cfg, embedder=None):
@@ -75,7 +82,7 @@ def test_vr003_variants(cfg, vault_dir):
 
 
 def test_required_fields_are_configurable(cfg, vault_dir):
-    (vault_dir / ".vault-recall.toml").write_text('required_fields = ["name", "type"]\n')
+    (vault_dir / ".markdown-memory.toml").write_text('required_fields = ["name", "type"]\n')
     messages = [f.message for f in by_code(run_lint(load_config(str(vault_dir))))["VR003"]]
     assert any("'type'" in m for m in messages)
 
@@ -94,13 +101,13 @@ def test_vr006_orphans(cfg):
 
 def test_vr007_soft_and_hard_budget(cfg, vault_dir):
     size = (vault_dir / "MEMORY.md").stat().st_size
-    (vault_dir / ".vault-recall.toml").write_text(
+    (vault_dir / ".markdown-memory.toml").write_text(
         f"[index_budget_bytes]\nsoft = {size - 10}\nhard = {size + 10}\n"
     )
     (finding,) = by_code(run_lint(load_config(str(vault_dir))))["VR007"]
     assert finding.level == "warning" and finding.path == "MEMORY.md"
 
-    (vault_dir / ".vault-recall.toml").write_text(
+    (vault_dir / ".markdown-memory.toml").write_text(
         f"[index_budget_bytes]\nsoft = {size - 20}\nhard = {size - 10}\n"
     )
     (finding,) = by_code(run_lint(load_config(str(vault_dir))))["VR007"]
@@ -115,7 +122,7 @@ def test_vr008_needs_embeddings_and_names_the_pair(cfg, embedder):
 
 
 def test_vr008_threshold_is_configurable(cfg, embedder, vault_dir):
-    (vault_dir / ".vault-recall.toml").write_text("duplicate_similarity = 0.999\n")
+    (vault_dir / ".markdown-memory.toml").write_text("duplicate_similarity = 0.999\n")
     assert "VR008" not in by_code(run_lint(load_config(str(vault_dir)), embedder))
 
 
@@ -219,7 +226,7 @@ def test_lint_exclude_hides_findings_but_keeps_files_searchable(vault_dir):
     cfg = load_config(str(vault_dir))
     assert "archive/old.md" in {f.path for f in lint(cfg, load_vault(cfg))}
 
-    (vault_dir / ".vault-recall.toml").write_text('lint_exclude = ["archive/**"]\n')
+    (vault_dir / ".markdown-memory.toml").write_text('lint_exclude = ["archive/**"]\n')
     cfg = load_config(str(vault_dir))
     vault = load_vault(cfg)
     assert not [f for f in lint(cfg, vault) if f.path.startswith("archive/")]
@@ -228,7 +235,7 @@ def test_lint_exclude_hides_findings_but_keeps_files_searchable(vault_dir):
 
 
 def test_lint_exclude_is_validated(vault_dir):
-    (vault_dir / ".vault-recall.toml").write_text('lint_exclude = "archive"\n')
+    (vault_dir / ".markdown-memory.toml").write_text('lint_exclude = "archive"\n')
     with pytest.raises(ConfigError):
         load_config(str(vault_dir))
 

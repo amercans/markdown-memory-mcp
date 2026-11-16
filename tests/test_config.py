@@ -1,6 +1,6 @@
 import pytest
 
-from vault_recall.config import ConfigError, load_config, resolve_vault
+from markdown_memory_mcp.config import ConfigError, load_config, resolve_vault
 
 
 def test_defaults(vault_dir):
@@ -18,7 +18,7 @@ def test_defaults(vault_dir):
 
 
 def test_toml_overrides(vault_dir):
-    (vault_dir / ".vault-recall.toml").write_text(
+    (vault_dir / ".markdown-memory.toml").write_text(
         'index_files = ["INDEX.md"]\nk = 5\nmin_similarity = 0.5\n'
         'model = "minishlab/potion-multilingual-128M"\n'
         'required_fields = ["name"]\n[index_budget_bytes]\nsoft = 100\nhard = 200\n'
@@ -54,7 +54,7 @@ def test_explicit_config_path(vault_dir, tmp_path):
     ],
 )
 def test_invalid_config_is_rejected(vault_dir, text):
-    (vault_dir / ".vault-recall.toml").write_text(text)
+    (vault_dir / ".markdown-memory.toml").write_text(text)
     with pytest.raises(ConfigError):
         load_config(str(vault_dir))
 
@@ -62,7 +62,7 @@ def test_invalid_config_is_rejected(vault_dir, text):
 def test_vault_resolution_order(vault_dir, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     assert resolve_vault(None) == tmp_path.resolve()
-    monkeypatch.setenv("VAULT_RECALL_VAULT", str(vault_dir))
+    monkeypatch.setenv("MARKDOWN_MEMORY_VAULT", str(vault_dir))
     assert resolve_vault(None) == vault_dir.resolve()
     assert resolve_vault(str(tmp_path)) == tmp_path.resolve()
 
@@ -73,7 +73,7 @@ def test_missing_vault(tmp_path):
 
 
 def test_errors_name_the_file_and_use_correct_grammar(vault_dir):
-    path = vault_dir / ".vault-recall.toml"
+    path = vault_dir / ".markdown-memory.toml"
     path.write_text('k = "3"\n')
     with pytest.raises(ConfigError) as exc:
         load_config(str(vault_dir))
@@ -81,3 +81,18 @@ def test_errors_name_the_file_and_use_correct_grammar(vault_dir):
     path.write_text('min_similarity = "x"\n')
     with pytest.raises(ConfigError, match="min_similarity must be a float"):
         load_config(str(vault_dir))
+
+
+def test_legacy_config_file_is_read_with_a_deprecation_note(vault_dir, capsys):
+    (vault_dir / ".vault-recall.toml").write_text("k = 7\n")
+    assert load_config(str(vault_dir)).k == 7
+    err = capsys.readouterr().err
+    assert "deprecated config file .vault-recall.toml" in err
+    assert "rename it to .markdown-memory.toml" in err and err.count("\n") == 1
+
+
+def test_new_config_file_wins_and_is_silent(vault_dir, capsys):
+    (vault_dir / ".vault-recall.toml").write_text("k = 7\n")
+    (vault_dir / ".markdown-memory.toml").write_text("k = 4\n")
+    assert load_config(str(vault_dir)).k == 4
+    assert capsys.readouterr().err == ""

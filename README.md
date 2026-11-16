@@ -1,27 +1,27 @@
-# vault-recall
+# markdown-memory-mcp
 
-[![CI](https://github.com/amercans/vault-recall/actions/workflows/ci.yml/badge.svg)](https://github.com/amercans/vault-recall/actions/workflows/ci.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/amercans/vault-recall/badge)](https://scorecard.dev/viewer/?uri=github.com/amercans/vault-recall)
-[![Release](https://img.shields.io/github/v/release/amercans/vault-recall)](https://github.com/amercans/vault-recall/releases/latest)
+[![CI](https://github.com/amercans/markdown-memory-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/amercans/markdown-memory-mcp/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/amercans/markdown-memory-mcp/badge)](https://scorecard.dev/viewer/?uri=github.com/amercans/markdown-memory-mcp)
+[![Release](https://img.shields.io/github/v/release/amercans/markdown-memory-mcp)](https://github.com/amercans/markdown-memory-mcp/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Local recall, lint and an MCP server for a folder of Markdown notes that serves as an AI assistant's long-term memory. It works with Obsidian-style vaults: YAML frontmatter, `[[wikilinks]]`, and an index file such as `MEMORY.md` that links to the notes. It runs as a [Claude Code](https://docs.claude.com/en/docs/claude-code) hook that adds the notes relevant to each prompt, as a command line tool, and as an MCP server for any MCP client.
 
-The files stay the source of truth. vault-recall never writes to your vault. The only exception is the MCP `write_note` tool, which exists only if you start the server with `--allow-write`.
+The files stay the source of truth. markdown-memory-mcp never writes to your vault. The only exception is the MCP `write_note` tool, which exists only if you start the server with `--allow-write`.
 
 ## Why
 
 An index file that is loaded into every session has to stay small. As a vault grows, older notes get moved out of the index, and from then on the assistant finds them only when it happens to search for the exact words the note uses. "Keep the starter alive" does not match a note titled "sourdough starter feeding".
 
-vault-recall closes that gap in two ways:
+markdown-memory-mcp closes that gap in two ways:
 
 - **Recall by meaning.** It ranks notes with BM25 and with embeddings and merges both rankings. The hook injects the few notes that match the current prompt and are not already in the index.
-- **A healthier vault.** `vault-recall lint` finds broken links, notes without a description, duplicate names, orphans, an index that outgrew its budget, and notes that are near-copies of each other.
+- **A healthier vault.** `markdown-memory-mcp lint` finds broken links, notes without a description, duplicate names, orphans, an index that outgrew its budget, and notes that are near-copies of each other.
 
 ## How it works
 
 ```
- prompt ──▶ UserPromptSubmit hook ──▶ vault-recall hook
+ prompt ──▶ UserPromptSubmit hook ──▶ markdown-memory-mcp hook
                                           │
    notes (*.md), read on every call ──────┤
         │                                 ▼
@@ -48,7 +48,7 @@ The design, invariants and threat model are in [ARCHITECTURE.md](ARCHITECTURE.md
 ## Install
 
 ```sh
-uv tool install "vault-recall[all] @ git+https://github.com/amercans/vault-recall"
+uv tool install "markdown-memory-mcp[all] @ git+https://github.com/amercans/markdown-memory-mcp"
 ```
 
 Extras: `embed` (fastembed and numpy), `mcp` (the MCP server), `all` (both). The core install depends on PyYAML only.
@@ -58,23 +58,23 @@ Extras: `embed` (fastembed and numpy), `mcp` (the MCP server), `all` (both). The
 The examples run on the small invented vault that ships in the repository. Clone it to follow along:
 
 ```sh
-git clone https://github.com/amercans/vault-recall
-cd vault-recall
+git clone https://github.com/amercans/markdown-memory-mcp
+cd markdown-memory-mcp
 ```
 
-For your own vault, use `--vault tests/fixtures/vault` instead of `--vault tests/fixtures/vault`. If you run a command from inside the vault, or set `VAULT_RECALL_VAULT`, `--vault` can be left out.
+For your own vault, use `--vault tests/fixtures/vault` instead of `--vault tests/fixtures/vault`. If you run a command from inside the vault, or set `MARKDOWN_MEMORY_VAULT`, `--vault` can be left out.
 
 Build the index. The first run downloads the model (about 220 MB, from a public repository, so no Hugging Face token is needed) and shows a download progress bar. Later runs embed only new and changed notes. `search`, `lint`, the hook and the server never download anything.
 
 ```console
-$ vault-recall index --vault tests/fixtures/vault
-13 notes: 13 added, 0 updated, 0 removed, 0 unchanged (~/.cache/vault-recall/<hash>)
+$ markdown-memory-mcp index --vault tests/fixtures/vault
+13 notes: 13 added, 0 updated, 0 removed, 0 unchanged (~/.cache/markdown-memory-mcp/<hash>)
 ```
 
 Search. Neither "keep" nor "alive" appears in the note that comes first:
 
 ```console
-$ vault-recall search "how do I keep the starter alive" --vault tests/fixtures/vault -k 1
+$ markdown-memory-mcp search "how do I keep the starter alive" --vault tests/fixtures/vault -k 1
 1. sourdough-starter-feeding  [rrf 0.0328  cosine 0.47  bm25 7.23]
    sourdough-starter-feeding.md
    How often to feed a sourdough starter and how to revive one that has gone sluggish
@@ -83,7 +83,7 @@ $ vault-recall search "how do I keep the starter alive" --vault tests/fixtures/v
 A Turkish query finds the Turkish note. This hit comes from the lexical side (the stem `simit`); the cosine is low. It demonstrates folding and stemming, not cross-language recall:
 
 ```console
-$ vault-recall search "simit nasıl yapılır" --vault tests/fixtures/vault -k 1
+$ markdown-memory-mcp search "simit nasıl yapılır" --vault tests/fixtures/vault -k 1
 1. istanbul-simit  [rrf 0.0328  cosine 0.13  bm25 3.23]
    istanbul-simit.md
    İstanbul usulü simit tarifi, pekmezli su ve susam ile
@@ -92,7 +92,7 @@ $ vault-recall search "simit nasıl yapılır" --vault tests/fixtures/vault -k 1
 Lint. The fixture vault contains one deliberate defect for each rule, apart from VR007:
 
 ```console
-$ vault-recall lint --vault tests/fixtures/vault
+$ markdown-memory-mcp lint --vault tests/fixtures/vault
 MEMORY.md
   L10   VR002  error    index links to missing file retired-vpn-notes.md
   L14   VR010  warning  line has 244 characters (max 200)
@@ -129,7 +129,7 @@ Add a `UserPromptSubmit` hook to the user-level `settings.json` of Claude Code (
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "vault-recall hook --vault ~/notes", "timeout": 10 }
+          { "type": "command", "command": "markdown-memory-mcp hook --vault ~/notes", "timeout": 10 }
         ]
       }
     ]
@@ -137,7 +137,7 @@ Add a `UserPromptSubmit` hook to the user-level `settings.json` of Claude Code (
 }
 ```
 
-Run `vault-recall index` once first. For the prompt "how do I keep the starter alive" the hook prints:
+Run `markdown-memory-mcp index` once first. For the prompt "how do I keep the starter alive" the hook prints:
 
 ```json
 {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": "Possibly relevant notes from the memory vault (read before acting if relevant):\n- sourdough-starter-feeding — How often to feed a sourdough starter and how to revive one that has gone sluggish (/path/to/vault/sourdough-starter-feeding.md)"}}
@@ -147,7 +147,7 @@ The hook is built never to get in the way of a prompt:
 
 - It prints nothing for slash commands, prompts shorter than three words, and short acknowledgements such as "ok, thanks".
 - It does nothing until an index exists. It never downloads a model and never builds an index from scratch.
-- It updates the index itself only when at most `hook_max_updates` files changed. If more changed, it uses the index as it is. Run `vault-recall index` to catch up.
+- It updates the index itself only when at most `hook_max_updates` files changed. If more changed, it uses the index as it is. Run `markdown-memory-mcp index` to catch up.
 - It skips notes that an index file already links to, since those are in context anyway, and notes it already injected in the same session.
 - It applies `min_similarity` and `relative_margin` to the cosine score, and requires a shared word (BM25 above zero) unless the cosine reaches `strong_similarity`.
 - Any error is written as one line to `hook.log` in the cache directory, and the hook exits 0 without output.
@@ -156,25 +156,25 @@ A call takes under a second on the fixture vault, most of it loading the model.
 
 ## MCP server
 
-`vault-recall serve` speaks MCP over stdio and works with any MCP client. Tools:
+`markdown-memory-mcp serve` speaks MCP over stdio and works with any MCP client. Tools:
 
 | Tool | Purpose |
 |---|---|
 | `search_notes(query, k=5)` | Hybrid search, with the score breakdown |
 | `read_note(name)` | Full text of a note, by file name or frontmatter `name` |
 | `backlinks(name)` | Notes and index files that link to a note |
-| `lint_vault()` | The same findings as `vault-recall lint` |
+| `lint_vault()` | The same findings as `markdown-memory-mcp lint` |
 | `write_note(name, description, body, type=None, overwrite=False)` | Registered only with `--allow-write` |
 
 `write_note` creates `<name>.md` in the vault root with frontmatter. Names must match `^[a-z0-9](?:[a-z0-9-]{0,79}[a-z0-9])?$` (lowercase letters, digits and inner dashes, 1 to 81 characters). It refuses to overwrite unless `overwrite=true`, never touches an index file, and refuses paths, symlinks and anything that would land outside the vault.
 
-Claude Desktop, in `claude_desktop_config.json`. Desktop starts servers with a minimal `PATH`, so give the absolute path to the executable (the output of `which vault-recall`, for example `/path/to/bin/vault-recall`) and a vault path without `~`:
+Claude Desktop, in `claude_desktop_config.json`. Desktop starts servers with a minimal `PATH`, so give the absolute path to the executable (the output of `which markdown-memory-mcp`, for example `/path/to/bin/markdown-memory-mcp`) and a vault path without `~`:
 
 ```json
 {
   "mcpServers": {
-    "vault-recall": {
-      "command": "/path/to/bin/vault-recall",
+    "markdown-memory-mcp": {
+      "command": "/path/to/bin/markdown-memory-mcp",
       "args": ["serve", "--vault", "/path/to/vault"]
     }
   }
@@ -184,7 +184,7 @@ Claude Desktop, in `claude_desktop_config.json`. Desktop starts servers with a m
 Claude Code:
 
 ```sh
-claude mcp add vault-recall -- vault-recall serve --vault ~/notes
+claude mcp add markdown-memory-mcp -- markdown-memory-mcp serve --vault ~/notes
 ```
 
 Append `--allow-write` to the arguments to expose `write_note`.
@@ -206,7 +206,7 @@ Append `--allow-write` to the arguments to expose `write_note`.
 
 ## Configuration
 
-The vault is taken from `--vault`, then `$VAULT_RECALL_VAULT`, then the current directory. Settings come from `--config`, or from `.vault-recall.toml` in the vault root. Every key is optional:
+The vault is taken from `--vault`, then `$MARKDOWN_MEMORY_VAULT`, then the current directory. Settings come from `--config`, or from `.markdown-memory.toml` in the vault root. Every key is optional:
 
 ```toml
 index_files = ["MEMORY.md"]
@@ -243,11 +243,11 @@ hard = 15000
 | `hook_max_updates` | `20` | Most changed files the hook re-embeds on its own. |
 | `duplicate_similarity` | `0.92` | Cosine at which VR008 reports a pair. |
 
-`VAULT_RECALL_CACHE` sets the cache directory. Otherwise it is `$XDG_CACHE_HOME/vault-recall` or `~/.cache/vault-recall`. Each vault and model pair gets its own subdirectory, and the downloaded models live in `models/` next to them.
+`MARKDOWN_MEMORY_CACHE` sets the cache directory. Otherwise it is `$XDG_CACHE_HOME/markdown-memory-mcp` or `~/.cache/markdown-memory-mcp`. Each vault and model pair gets its own subdirectory, and the downloaded models live in `models/` next to them.
 
 ## Privacy
 
-Everything runs on your machine. The only network access is the one-time download of the embedding model from Hugging Face, the first time you run `vault-recall index`. After that nothing leaves the machine: no telemetry and no calls to a hosted API. The index lives in the cache directory, never inside the vault. It holds the vectors and, in `meta.json`, the model name, the absolute path of the vault, and each note's relative file name, modification time and hash. It holds no note text. The cache directories it creates are mode 0700 and its files 0600.
+Everything runs on your machine. The only network access is the one-time download of the embedding model from Hugging Face, the first time you run `markdown-memory-mcp index`. After that nothing leaves the machine: no telemetry and no calls to a hosted API. The index lives in the cache directory, never inside the vault. It holds the vectors and, in `meta.json`, the model name, the absolute path of the vault, and each note's relative file name, modification time and hash. It holds no note text. The cache directories it creates are mode 0700 and its files 0600.
 
 ## Limitations
 

@@ -18,13 +18,13 @@ from .vault import Vault, load_vault
 
 EPILOG = """\
 examples:
-  vault-recall index --vault ~/notes
-  vault-recall search "how do I keep the starter alive" --vault ~/notes
-  vault-recall lint --vault ~/notes --fail-on warning
-  vault-recall serve --vault ~/notes
+  markdown-memory-mcp index --vault ~/notes
+  markdown-memory-mcp search "how do I keep the starter alive" --vault ~/notes
+  markdown-memory-mcp lint --vault ~/notes --fail-on warning
+  markdown-memory-mcp serve --vault ~/notes
 
-The vault is --vault, else $VAULT_RECALL_VAULT, else the current directory.
-Documentation: https://github.com/amercans/vault-recall#readme
+The vault is --vault, else $MARKDOWN_MEMORY_VAULT, else the current directory.
+Documentation: https://github.com/amercans/markdown-memory-mcp#readme
 """
 
 
@@ -40,14 +40,14 @@ def _positive_int(text: str) -> int:
 
 def _common() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--vault", help="vault directory (default: $VAULT_RECALL_VAULT or cwd)")
-    common.add_argument("--config", help="config file (default: <vault>/.vault-recall.toml)")
+    common.add_argument("--vault", help="vault directory (default: $MARKDOWN_MEMORY_VAULT or cwd)")
+    common.add_argument("--config", help="config file (default: <vault>/.markdown-memory.toml)")
     return common
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="vault-recall",
+        prog="markdown-memory-mcp",
         description=(
             "Hybrid recall, lint and an MCP server for a folder of Markdown notes used as an "
             "AI assistant's long-term memory. Files stay the source of truth; the vault is "
@@ -56,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--version", action="version", version=f"vault-recall {__version__}")
+    parser.add_argument("--version", action="version", version=f"markdown-memory-mcp {__version__}")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
     common = _common()
 
@@ -104,15 +104,16 @@ def warn_about_vault(cfg: Config, vault: Vault, args: argparse.Namespace) -> Non
     if not problems:
         return
     for problem in problems:
-        print(f"vault-recall: {problem}", file=sys.stderr)
+        print(f"markdown-memory-mcp: {problem}", file=sys.stderr)
     if not args.vault:
         source = (
-            "$VAULT_RECALL_VAULT"
-            if os.environ.get("VAULT_RECALL_VAULT")
+            "$MARKDOWN_MEMORY_VAULT"
+            if os.environ.get("MARKDOWN_MEMORY_VAULT")
             else "the current directory"
         )
         print(
-            f"vault-recall: no --vault given, so {source} is used; pass --vault to choose another",
+            f"markdown-memory-mcp: no --vault given, so {source} is used; "
+            "pass --vault to choose another",
             file=sys.stderr,
         )
 
@@ -140,7 +141,7 @@ def cmd_index(cfg: Config, args: argparse.Namespace) -> int:
 
 def cmd_search(cfg: Config, args: argparse.Namespace) -> int:
     if not args.query.strip():
-        print("vault-recall: the query is empty", file=sys.stderr)
+        print("markdown-memory-mcp: the query is empty", file=sys.stderr)
         return 2
     # Searching never downloads the model; only `index` does.
     corpus = build_corpus(cfg, _factory(cfg, local_only=True))
@@ -150,16 +151,18 @@ def cmd_search(cfg: Config, args: argparse.Namespace) -> int:
     if corpus.notice:
         print(
             f"embedding model not available ({corpus.notice}): ranking by BM25 only. "
-            "`vault-recall index` downloads the model.",
+            "`markdown-memory-mcp index` downloads the model.",
             file=sys.stderr,
         )
     elif not corpus.hybrid:
         print(
-            "no embedding index: ranking by BM25 only (run `vault-recall index`)", file=sys.stderr
+            "no embedding index: ranking by BM25 only (run `markdown-memory-mcp index`)",
+            file=sys.stderr,
         )
     elif corpus.stale:
         print(
-            f"{corpus.stale} notes are not indexed yet (run `vault-recall index`)", file=sys.stderr
+            f"{corpus.stale} notes are not indexed yet (run `markdown-memory-mcp index`)",
+            file=sys.stderr,
         )
     hits = corpus.search(args.query, k=args.k or cfg.k)
     if args.json:
@@ -193,7 +196,8 @@ def cmd_lint(cfg: Config, args: argparse.Namespace) -> int:
         print(format_human(findings))
         if vectors is None:
             print(
-                "VR008 skipped: needs the embedding index (`vault-recall index`)", file=sys.stderr
+                "VR008 skipped: needs the embedding index (`markdown-memory-mcp index`)",
+                file=sys.stderr,
             )
     return exit_code(findings, args.fail_on)
 
@@ -220,10 +224,10 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_lint(cfg, args)
         return cmd_serve(cfg, args)
     except (ConfigError, StoreError, EmbedUnavailable) as exc:
-        print(f"vault-recall: {exc}", file=sys.stderr)
+        print(f"markdown-memory-mcp: {exc}", file=sys.stderr)
         return 2
     except ImportError as exc:
-        print(f"vault-recall: {exc}", file=sys.stderr)
+        print(f"markdown-memory-mcp: {exc}", file=sys.stderr)
         return 2
 
 
