@@ -208,3 +208,17 @@ def test_multiline_description_is_collapsed_and_yaml_is_safe(writable, vault_dir
 def test_no_temp_files_remain(writable, vault_dir):
     writable.write_note("tidy", "d", "b")
     assert not [p for p in vault_dir.glob("*") if p.name.startswith(".write-note-")]
+
+
+@pytest.mark.parametrize("create_index", [True, False])
+def test_index_name_in_another_case_is_refused(vault_dir, create_index):
+    # "memory" is the same file as MEMORY.md on a case-insensitive file system.
+    (vault_dir / "MEMORY.md").unlink()
+    if create_index:
+        (vault_dir / "MEMORY.md").write_text("# Index\n")
+    tools = VaultTools(load_config(str(vault_dir)), None, allow_write=True)
+    with pytest.raises(ToolError, match="index"):
+        tools.write_note("memory", "d", "b", overwrite=True)
+    assert [p.name for p in vault_dir.glob("*") if p.name.lower() == "memory.md"] == (
+        ["MEMORY.md"] if create_index else []
+    )

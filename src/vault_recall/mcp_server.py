@@ -128,14 +128,26 @@ class VaultTools:
         if os.path.isabs(name) or name.startswith("~"):
             raise ToolError("name must be a note name, not a path")
 
+    def _is_index_file(self, filename: str, target: Path) -> bool:
+        """True if ``target`` is, or on a case-insensitive file system would be, an index file."""
+        wanted = os.path.normcase(filename).casefold()
+        for index in self.cfg.index_files:
+            candidate = self.root / index
+            if os.path.normcase(Path(index).as_posix()).casefold() == wanted:
+                return True
+            if target.exists() and candidate.exists() and os.path.samefile(target, candidate):
+                return True
+        existing = Resolver(load_vault(self.cfg)).lookup(filename.removesuffix(".md"))
+        return existing is not None and existing.is_index
+
     def _write_target(self, name: str) -> Path:
         self._reject_path_like(name)
         if not SLUG.match(name):
             raise ToolError("name must match ^[a-z0-9][a-z0-9-]{0,80}$")
         filename = f"{name}.md"
-        if filename in {Path(p).as_posix() for p in self.cfg.index_files}:
-            raise ToolError("index files are never edited by this tool")
         target = self.root / filename
+        if self._is_index_file(filename, target):
+            raise ToolError("index files are never edited by this tool")
         if target.is_symlink():
             raise ToolError("refusing to write through a symlink")
         if not target.resolve().is_relative_to(self.root) or target.resolve().parent != self.root:
