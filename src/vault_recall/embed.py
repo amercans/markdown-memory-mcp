@@ -13,7 +13,10 @@ from .text import tokenize
 if TYPE_CHECKING:
     import numpy as np
 
-INSTALL_HINT = "install with `vault-recall[all]` (or `vault-recall[embed]`) to enable embeddings"
+INSTALL_COMMAND = (
+    'uv tool install "vault-recall[all] @ git+https://github.com/amercans/vault-recall"'
+)
+INSTALL_HINT = f"install the extras with: {INSTALL_COMMAND}"
 
 
 class EmbedUnavailable(Exception):

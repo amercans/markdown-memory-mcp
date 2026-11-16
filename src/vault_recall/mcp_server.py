@@ -10,7 +10,7 @@ from pathlib import Path
 import yaml
 
 from .config import Config
-from .embed import EmbedderFactory
+from .embed import INSTALL_HINT, EmbedderFactory
 from .lint import lint, stored_vectors
 from .search import build_corpus
 from .vault import MAX_NOTE_BYTES, Resolver, load_vault
@@ -201,7 +201,7 @@ def build_server(tools: VaultTools):
     try:
         from mcp.server.fastmcp import FastMCP
     except ImportError as exc:
-        raise ImportError("install with `vault-recall[all]` (or `vault-recall[mcp]`)") from exc
+        raise ImportError(f"the MCP server needs the mcp extra; {INSTALL_HINT}") from exc
 
     server = FastMCP("vault-recall")
     server.tool()(tools.search_notes)

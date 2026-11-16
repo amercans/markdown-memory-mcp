@@ -257,3 +257,11 @@ def test_help_describes_the_tool_with_examples(capsys):
     with pytest.raises(SystemExit):
         cli.main(["search", "--help"])
     assert "what to look for" in capsys.readouterr().out
+
+
+def test_install_hint_is_a_runnable_command(vault_dir, no_embeddings, capsys):
+    cli.main(["index", "--vault", str(vault_dir)])
+    err = capsys.readouterr().err
+    assert (
+        'uv tool install "vault-recall[all] @ git+https://github.com/amercans/vault-recall"' in err
+    )
