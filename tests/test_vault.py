@@ -138,11 +138,25 @@ def test_mask_code_keeps_length_and_lines():
 
 def test_backticked_paths(tmp_path):
     body = (
-        "`~/notes/x.sh` `/usr/local/bin/tool` `/verify` `not/a/path` `~/dir with space`\n"
-        "`/api/v1/*`\n```\n`/in/fence/ignored`\n```\n"
+        "`~/notes/x.sh` `/usr/local/bin/tool` `/etc/hosts` `~/dir with space`\n"
+        "`/api/v1/*` `not/a/path`\n"
+        "```\n`/in/fence/ignored`\n```\n"
     )
     found = [p for _, p in backticked_paths(note_from(tmp_path, body))]
-    assert found == ["~/notes/x.sh", "/usr/local/bin/tool"]
+    assert found == ["~/notes/x.sh", "/usr/local/bin/tool", "/etc/hosts"]
+
+
+def test_url_routes_are_not_paths(tmp_path):
+    body = (
+        "`/legal/cookies` `/blog/[slug]` `/assets/` `/verify` `/api/v1/users` `/docs/<id>`\n"
+        "`/etc/{a,b}` `~/notes/[slug].md` `~/notes/*.md` `~/notes/\u2026`\n"
+    )
+    assert backticked_paths(note_from(tmp_path, body)) == []
+
+
+def test_home_paths_are_always_checked(tmp_path):
+    found = backticked_paths(note_from(tmp_path, "`~/no-such-dir/x`"))
+    assert [p for _, p in found] == ["~/no-such-dir/x"]
 
 
 # --- discovery

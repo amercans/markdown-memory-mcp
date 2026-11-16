@@ -194,7 +194,7 @@ Append `--allow-write` to the arguments to expose `write_note`.
 | VR006 | info | Orphan: no note and no index file links to it. |
 | VR007 | warning / error | An index file is over `index_budget_bytes.soft` (warning) or `.hard` (error). |
 | VR008 | warning | Near-duplicate notes (cosine at or above `duplicate_similarity`). Needs the embedding index and is skipped without it. |
-| VR009 | warning | A path in backticks, absolute or starting with `~/`, does not exist. |
+| VR009 | warning | A path in backticks does not exist. Paths starting with `~/` are always checked. An absolute path is checked only if its first directory exists on this machine (`/Users`, `/etc`, `/opt`); otherwise it is taken for a URL route and skipped, as are paths with `[`, `*`, `<`, `{` or `…`. |
 | VR010 | warning | An index line is longer than `max_index_line` characters. |
 
 ## Configuration
@@ -246,7 +246,7 @@ Everything runs on your machine. The only network access is the one-time downloa
 - Without the `embed` extra the hook falls back to BM25, `min_similarity` does not apply, and it injects more loosely related notes.
 - Files over 1 MB are skipped. Only Markdown is read.
 - Embeddings are computed from the title, `name`, `description` and the first 3000 characters of a note.
-- VR009 checks every absolute-looking path in backticks, so URL routes such as `/api/v1/users` are reported too.
+- VR009 cannot tell a URL route from a file path when the route's first segment is also a directory on your machine, such as `/usr/...` or `/opt/...`.
 - The `mcp` extra is pinned below 2.0, because the server uses the FastMCP interface of the 1.x SDK.
 
 ## Development

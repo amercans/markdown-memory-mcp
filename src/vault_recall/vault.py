@@ -237,7 +237,19 @@ def extract_links(note: Note) -> list[Link]:
     return links
 
 
-_PATH_SPAN = re.compile(r"^(?:~/|/)[^\s*?<>{}$|;&\"']+$")
+_PATH_SPAN = re.compile(r"^(?:~/|/)[^\s*?<>{}\[\]\u2026$|;&\"']+$")
+
+
+def _is_filesystem_path(path: str) -> bool:
+    """Home paths always count. An absolute path counts only if its first directory exists
+    here (``/Users``, ``/etc``); anything else is far more likely a URL route.
+    """
+    if path.startswith("~/"):
+        return True
+    first = path.split("/")[1]
+    if not first or (path.count("/") == 2 and path.endswith("/")):
+        return False
+    return os.path.isdir("/" + first)
 
 
 def backticked_paths(note: Note) -> list[tuple[int, str]]:
@@ -250,8 +262,7 @@ def backticked_paths(note: Note) -> list[tuple[int, str]]:
             if not _PATH_SPAN.match(span):
                 continue
             path = span.rstrip(".,:;)")
-            # A lone "/word" is more likely a slash command than a file.
-            if path.startswith("~/") or path.count("/") >= 2:
+            if _is_filesystem_path(path):
                 found.append((lineno, path))
     return found
 

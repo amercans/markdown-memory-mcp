@@ -200,3 +200,14 @@ def test_cli_fail_on_levels_with_only_warnings(tmp_path, fail_on, expected):
     write_note(vault, "MEMORY.md", "# Index\n- [A](a.md) - first\n")
     write_note(vault, "a.md", "---\nname: other-name\ndescription: first\n---\n")
     assert main(["lint", "--vault", str(vault), "--fail-on", fail_on]) == expected
+
+
+def test_vr009_skips_url_routes_but_checks_real_prefixes(cfg, vault_dir):
+    write_note(
+        vault_dir,
+        "paths.md",
+        "---\nname: paths\ndescription: d\n---\n[[home-lab-dns]]\n"
+        "`/legal/cookies` `/blog/[slug]` `/assets/` `/etc/definitely-missing-file`\n",
+    )
+    messages = [f.message for f in by_code(run_lint(cfg))["VR009"] if f.path == "paths.md"]
+    assert messages == ["path in code span does not exist: /etc/definitely-missing-file"]
