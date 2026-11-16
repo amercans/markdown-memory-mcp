@@ -73,8 +73,6 @@ class Corpus:
 
         With ``k=None`` every ranked note is returned, so callers can filter before cutting.
         """
-        import numpy as np
-
         notes = self.notes
         exclude = exclude or set()
         allowed = [i for i, n in enumerate(notes) if n.rel not in exclude]
@@ -84,6 +82,8 @@ class Corpus:
 
         cosines: dict[int, float] = {}
         if self.hybrid and self.embedder is not None:
+            import numpy as np  # only the embedding path needs it, so the core install works
+
             q = self.embedder.embed([query[:QUERY_CHARS]])[0]
             for i in allowed:
                 vec = self.vectors.get(notes[i].rel)
