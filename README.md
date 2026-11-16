@@ -194,7 +194,7 @@ Append `--allow-write` to the arguments to expose `write_note`.
 | VR006 | info | Orphan: no note and no index file links to it. |
 | VR007 | warning / error | An index file is over `index_budget_bytes.soft` (warning) or `.hard` (error). |
 | VR008 | warning | Near-duplicate notes (cosine at or above `duplicate_similarity`). Needs the embedding index and is skipped without it. |
-| VR009 | warning | A path in backticks does not exist. Paths starting with `~/` are always checked. An absolute path is checked only if its first directory exists on this machine (`/Users`, `/etc`, `/opt`); otherwise it is taken for a URL route and skipped, as are paths with `[`, `*`, `<`, `{` or `…`. |
+| VR009 | warning | A path in backticks does not exist. Paths starting with `~/` are always checked. An absolute path is checked only if its first directory exists on this machine (`/Users`, `/etc`, `/opt`); otherwise it is taken for a URL route and skipped, as are paths with `[`, `*`, `<`, `{`, `…` or `...`, and paths with a `YYYY`, `MM`, `DD` or `XXX` placeholder. |
 | VR010 | warning | An index line is longer than `max_index_line` characters. |
 
 ## Configuration

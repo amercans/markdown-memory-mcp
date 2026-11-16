@@ -240,10 +240,15 @@ def extract_links(note: Note) -> list[Link]:
 _PATH_SPAN = re.compile(r"^(?:~/|/)[^\s*?<>{}\[\]\u2026$|;&\"']+$")
 
 
+_PLACEHOLDER = re.compile(r"(?<![A-Za-z])(?:YYYY|MM|DD|X{3,})(?![A-Za-z])")
+
+
 def _is_filesystem_path(path: str) -> bool:
     """Home paths always count. An absolute path counts only if its first directory exists
     here (``/Users``, ``/etc``); anything else is far more likely a URL route.
     """
+    if "..." in path or _PLACEHOLDER.search(path):
+        return False
     if path.startswith("~/"):
         return True
     first = path.split("/")[1]

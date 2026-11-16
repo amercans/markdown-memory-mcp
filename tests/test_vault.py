@@ -233,3 +233,13 @@ def test_non_note_files_resolve(vault_dir, cfg):
     pics = next(n for n in vault.notes if n.stem == "pics")
     results = [resolver.resolve(link, pics) for link in extract_links(pics)]
     assert results == [True, None]
+
+
+def test_elided_and_placeholder_paths_are_skipped(tmp_path):
+    body = (
+        "`~/.config/.../memory` `/Users/.../index.html` `~/notes/YYYY-MM-DD.md` "
+        "`~/logs/XXX/app.log` `/etc/backup-MM_DD/x`\n"
+        "`~/notes/MMM.md` `~/notes/real-DDay.md`\n"
+    )
+    found = [p for _, p in backticked_paths(note_from(tmp_path, body))]
+    assert found == ["~/notes/MMM.md", "~/notes/real-DDay.md"]
