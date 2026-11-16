@@ -114,7 +114,7 @@ raspberry-pi-notes.md
 raspberry-pi-setup.md
   L1    VR005  error    name 'raspberry-pi-setup' is also used by raspberry-pi-notes.md
 
-5 errors, 5 warnings, 2 notes
+5 errors, 5 warnings, 2 info
 ```
 
 `--json` prints the same findings as JSON. `--fail-on {error,warning,never}` sets the level at which the exit code becomes 1 (default `error`), so the command can gate a commit or a CI job.
