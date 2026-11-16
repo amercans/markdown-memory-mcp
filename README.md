@@ -11,11 +11,11 @@ The files stay the source of truth. vault-recall never writes to your vault. The
 
 ## Why
 
-An index file that is loaded into every session has to stay small. As a vault grows, older notes get moved out of the index, and from then on the assistant finds them only when it happens to search for the exact words the note uses. "Keep the starter alive" does not match a note titled "sourdough starter feeding", and a Turkish note is not found by an English query.
+An index file that is loaded into every session has to stay small. As a vault grows, older notes get moved out of the index, and from then on the assistant finds them only when it happens to search for the exact words the note uses. "Keep the starter alive" does not match a note titled "sourdough starter feeding".
 
 vault-recall closes that gap in two ways:
 
-- **Recall by meaning.** It ranks notes with BM25 and with multilingual embeddings and merges both rankings. The hook injects the few notes that match the current prompt and are not already in the index.
+- **Recall by meaning.** It ranks notes with BM25 and with embeddings and merges both rankings. The hook injects the few notes that match the current prompt and are not already in the index.
 - **A healthier vault.** `vault-recall lint` finds broken links, notes without a description, duplicate names, orphans, an index that outgrew its budget, and notes that are near-copies of each other.
 
 ## How it works
@@ -34,7 +34,7 @@ vault-recall closes that gap in two ways:
 ```
 
 - **Lexical side.** Text is Unicode-normalised, `İ` and `I` are folded to `i`, and every word is cut to its first five letters. This crude stemming works well for agglutinative languages such as Turkish. File names count twice, as a cheap title boost.
-- **Semantic side.** [fastembed](https://github.com/qdrant/fastembed) runs a small multilingual model locally (ONNX, no GPU). Vectors are kept in a cache directory outside the vault and are updated incrementally.
+- **Semantic side.** [fastembed](https://github.com/qdrant/fastembed) runs a small model locally (ONNX, no GPU). The default model is multilingual. Queries in the same language as the note work best. Recall across languages, for example an English query for a Turkish note, is weaker. Turkish and other agglutinative text gets most of its help from the folding and prefix stems on the lexical side. Vectors are kept in a cache directory outside the vault and are updated incrementally.
 - **Fusion.** Reciprocal Rank Fusion with k = 60 over the two rankings. `search --json` returns the score breakdown.
 - **Without the `embed` extra** everything still works on BM25 alone, except the near-duplicate lint rule.
 
@@ -73,7 +73,7 @@ $ vault-recall search "how do I keep the starter alive" --vault ~/notes -k 1
    How often to feed a sourdough starter and how to revive one that has gone sluggish
 ```
 
-A Turkish query finds the Turkish note:
+A Turkish query finds the Turkish note. This hit comes from the lexical side (the stem `simit`); the cosine is low. It demonstrates folding and stemming, not cross-language recall:
 
 ```console
 $ vault-recall search "simit nasıl yapılır" --vault ~/notes -k 1
