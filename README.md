@@ -5,7 +5,16 @@
 [![Release](https://img.shields.io/github/v/release/amercans/markdown-memory-mcp)](https://github.com/amercans/markdown-memory-mcp/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Local recall, lint and an MCP server for a folder of Markdown notes that serves as an AI assistant's long-term memory. It works with Obsidian-style vaults: YAML frontmatter, `[[wikilinks]]`, and an index file such as `MEMORY.md` that links to the notes. It runs as a [Claude Code](https://docs.claude.com/en/docs/claude-code) hook that adds the notes relevant to each prompt, as a command line tool, and as an MCP server for any MCP client.
+Semantic recall for a Markdown memory vault: a Claude Code hook that brings back the right notes, a linter that keeps the vault healthy, and an MCP server for any MCP client. Local and multilingual.
+
+It works with Obsidian-style vaults: a folder of notes with YAML frontmatter, `[[wikilinks]]`, and an index file such as `MEMORY.md` that links to the notes.
+
+## What you get
+
+- **Recall hook.** A [Claude Code](https://docs.claude.com/en/docs/claude-code) `UserPromptSubmit` hook that adds the notes relevant to each prompt, without the index file having to list them.
+- **Search CLI.** `markdown-memory-mcp search` ranks notes by meaning and by words (BM25 plus embeddings) and shows the score breakdown.
+- **Vault linter.** `markdown-memory-mcp lint` checks links, frontmatter, duplicates, orphans and index size, with rules VR001 to VR010.
+- **MCP server.** `markdown-memory-mcp serve` exposes search, read, backlinks and lint to any MCP client, and optionally a write tool.
 
 The files stay the source of truth. markdown-memory-mcp never writes to your vault. The only exception is the MCP `write_note` tool, which exists only if you start the server with `--allow-write`.
 
@@ -244,6 +253,8 @@ hard = 15000
 | `duplicate_similarity` | `0.92` | Cosine at which VR008 reports a pair. |
 
 `MARKDOWN_MEMORY_CACHE` sets the cache directory. Otherwise it is `$XDG_CACHE_HOME/markdown-memory-mcp` or `~/.cache/markdown-memory-mcp`. Each vault and model pair gets its own subdirectory, and the downloaded models live in `models/` next to them.
+
+This project was called vault-recall before 0.2.0. The old config file name `.vault-recall.toml` is still read for this release, with a one-line note on stderr, when `.markdown-memory.toml` does not exist. An existing `vault-recall` cache directory is moved to the new name on first use, so the model is not downloaded again. The `VAULT_RECALL_*` environment variables are no longer read; use `MARKDOWN_MEMORY_VAULT` and `MARKDOWN_MEMORY_CACHE`.
 
 ## Privacy
 

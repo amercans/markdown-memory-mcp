@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "markdown-memory-mcp"
 version = "0.1.0"
-description = "Hybrid recall, lint and MCP server for a folder of Markdown notes used as an AI assistant's long-term memory."
+description = "Semantic recall for a Markdown memory vault: a Claude Code hook, a vault linter and an MCP server."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-keywords = ["markdown", "obsidian", "mcp", "search", "bm25", "embeddings", "claude-code"]
+keywords = ["markdown", "obsidian", "mcp", "mcp-server", "linter", "memory", "search", "bm25", "embeddings", "claude-code"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",

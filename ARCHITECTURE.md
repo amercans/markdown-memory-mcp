@@ -60,7 +60,7 @@ Only PyYAML is a hard dependency. numpy and fastembed (`embed`) and the MCP SDK 
 | `<cache>/hook.log` | One line per hook failure |
 | `<cache>/models/` | Downloaded embedding models |
 
-`<hash>` is the first 16 hex digits of SHA-256 over the absolute vault path and the model name.
+The cache directory of the former name (`vault-recall`) is moved to the new name on first use if the new one does not exist. `<hash>` is the first 16 hex digits of SHA-256 over the absolute vault path and the model name.
 
 ## Threat model
 
