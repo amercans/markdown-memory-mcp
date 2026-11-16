@@ -32,6 +32,16 @@ class VaultTools:
         self.allow_write = allow_write
 
     def search_notes(self, query: str, k: int = 5) -> list[dict]:
+        """Find notes by meaning and by words. Use this to recall what the vault knows.
+
+        Args:
+            query: What to look for, in natural language.
+            k: How many notes to return (1-50).
+
+        Returns a list, best first, of {name, path, description, rrf, cosine, bm25}. ``path`` is
+        relative to the vault; pass ``name`` to read_note for the full text. ``cosine`` is null
+        when the note has no embedding yet.
+        """
         if not query.strip():
             raise ToolError("query is empty")
         corpus = build_corpus(self.cfg, self.factory, max_updates=MAX_UPDATES)
@@ -40,6 +50,14 @@ class VaultTools:
         return [h.to_dict() for h in corpus.search(query, k=max(1, min(k, 50)))]
 
     def read_note(self, name: str) -> dict:
+        """Read one note in full.
+
+        Args:
+            name: The note's file name without ``.md``, or its frontmatter ``name``. Paths are
+                refused.
+
+        Returns {name, path, description, content}, where content is the whole file.
+        """
         note = self._find(name)
         resolved = note.path.resolve()
         if not resolved.is_relative_to(self.root):
@@ -52,6 +70,13 @@ class VaultTools:
         }
 
     def backlinks(self, name: str) -> list[dict]:
+        """List the notes and index files that link to a note, by [[wikilink]] or Markdown link.
+
+        Args:
+            name: The note's file name without ``.md``, or its frontmatter ``name``.
+
+        Returns a list of {name, path, line}. Empty if nothing links to it.
+        """
         target = self._find(name)
         sources = Resolver(load_vault(self.cfg)).inbound().get(target.path, [])
         return [
@@ -60,6 +85,11 @@ class VaultTools:
         ]
 
     def lint_vault(self) -> dict:
+        """Check the vault for broken links, missing frontmatter, duplicate names, orphans and an
+        oversized index. Takes no arguments.
+
+        Returns {findings: [{code, level, path, line, message}]}. Codes VR001-VR010.
+        """
         vault = load_vault(self.cfg)
         findings = lint(self.cfg, vault, stored_vectors(self.cfg, vault))
         return {"findings": [f.to_dict() for f in findings]}
@@ -72,6 +102,18 @@ class VaultTools:
         type: str | None = None,
         overwrite: bool = False,
     ) -> dict:
+        """Create a note in the vault root. Use this to save something worth remembering.
+
+        Args:
+            name: File name without ``.md``: lowercase letters, digits and dashes, 1-81
+                characters, starting and ending with a letter or digit.
+            description: One line saying what the note is for (1-500 characters).
+            body: Markdown body of the note.
+            type: Optional frontmatter ``type``, for example ``reference`` or ``feedback``.
+            overwrite: Replace an existing note of that name. Default false: refuse instead.
+
+        Index files are never written. Returns {path}.
+        """
         if not self.allow_write:
             raise ToolError("writing is disabled; start the server with --allow-write")
         target = self._write_target(name)

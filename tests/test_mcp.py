@@ -222,3 +222,14 @@ def test_index_name_in_another_case_is_refused(vault_dir, create_index):
     assert [p.name for p in vault_dir.glob("*") if p.name.lower() == "memory.md"] == (
         ["MEMORY.md"] if create_index else []
     )
+
+
+def test_every_tool_has_a_description_with_its_arguments(writable):
+    tools = {t.name: t for t in build_server(writable)._tool_manager.list_tools()}
+    assert set(tools) == {"search_notes", "read_note", "backlinks", "lint_vault", "write_note"}
+    for tool in tools.values():
+        assert len(tool.description) > 60, tool.name
+    for name in ("query", "k"):
+        assert name in tools["search_notes"].description
+    for name in ("description", "body", "overwrite"):
+        assert name in tools["write_note"].description
