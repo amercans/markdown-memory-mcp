@@ -3,6 +3,7 @@
 # history for:
 #   - IPv4 and MAC addresses outside the documentation ranges,
 #   - e-mail addresses other than example domains and GitHub no-reply addresses,
+#   - real home-directory paths and tracked symbolic links,
 #   - private key material,
 #   - every line of your own pattern list (case-insensitive substring match), kept OUTSIDE
 #     the repository: $VR_LEAK_PATTERNS or ~/.config/vault-recall/forbidden-patterns.txt
@@ -30,6 +31,15 @@ macs="$(printf '%s\n' "$all" | perl -ne 'while (/(?<![0-9A-Fa-f:])(?:[0-9A-Fa-f]
 mails="$(printf '%s\n' "$all" | perl -ne 'print lc($&), "\n" while /[A-Za-z0-9][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g' | sort -u \
   | grep -Ev '@(([a-z0-9-]+\.)*example\.(com|org|net)|users\.noreply\.github\.com)$')"
 [ -n "$mails" ] && report "e-mail addresses: $(echo "$mails" | tr '\n' ' ')"
+
+# Real home-directory paths. Placeholders such as /Users/... or /home/user are fine.
+paths="$(printf '%s\n' "$all" | perl -ne 'print "$&\n" while m{/(?:Users|home)/[A-Za-z][A-Za-z0-9._-]*}g' | sort -u \
+  | grep -Ev '^/(Users|home)/(user|username|name|you|example|runner)$')"
+[ -n "$paths" ] && report "home-directory paths: $(echo "$paths" | tr '\n' ' ')"
+
+# Symlinks can point at files outside the repository.
+links="$(git ls-files -s | awk '$1 == 120000 { print $4 }'; git log --all --raw --format= 2>/dev/null | awk '$2 == 120000 { print $6 }')"
+[ -n "$links" ] && report "symbolic links: $(echo "$links" | sort -u | tr '\n' ' ')"
 
 printf '%s\n' "$all" | grep -q -- '-----BEGIN [A-Z ]*PRIVATE KEY-----' && report "private key material"
 
