@@ -29,7 +29,7 @@ macs="$(printf '%s\n' "$all" | perl -ne 'while (/(?<![0-9A-Fa-f:])(?:[0-9A-Fa-f]
 [ -n "$macs" ] && report "MAC addresses outside the documentation range: $(echo "$macs" | tr '\n' ' ')"
 
 mails="$(printf '%s\n' "$all" | perl -ne 'print lc($&), "\n" while /[A-Za-z0-9][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g' | sort -u \
-  | grep -Ev '@(([a-z0-9-]+\.)*example\.(com|org|net)|users\.noreply\.github\.com)$')"
+  | grep -Ev '@(([a-z0-9-]+\.)*example\.(com|org|net)|users\.noreply\.github\.com)$' | grep -Ev '^(noreply|support)@github\.com$')"
 [ -n "$mails" ] && report "e-mail addresses: $(echo "$mails" | tr '\n' ' ')"
 
 # Real home-directory paths. Placeholders such as /Users/... or /home/user are fine.
