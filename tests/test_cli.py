@@ -200,3 +200,35 @@ def test_search_falls_back_when_the_model_is_missing(vault_dir, fake_model, monk
     assert json.loads(captured.out)[0]["name"] == "nginx-cache-headers"
     assert "not downloaded" in captured.err and "BM25 only" in captured.err
     assert "downloads the model" in captured.err
+
+
+def test_empty_vault_is_reported_with_the_resolved_path(tmp_path, monkeypatch, capsys):
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    monkeypatch.chdir(empty)
+    assert cli.main(["lint"]) == 0
+    err = capsys.readouterr().err
+    assert "no Markdown files found in" in err and str(empty.resolve()) in err
+    assert "no --vault given, so the current directory is used" in err
+    assert "index file MEMORY.md not found" not in err
+
+
+def test_missing_index_file_is_reported(vault_dir, no_embeddings, capsys):
+    (vault_dir / "MEMORY.md").unlink()
+    cli.main(["search", "nginx", "--vault", str(vault_dir)])
+    err = capsys.readouterr().err
+    assert f"index file MEMORY.md not found in {vault_dir.resolve()}" in err
+    assert "no --vault given" not in err  # it was given
+
+
+def test_environment_vault_is_named_as_the_source(tmp_path, monkeypatch, capsys):
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    monkeypatch.setenv("VAULT_RECALL_VAULT", str(empty))
+    cli.main(["lint"])
+    assert "so $VAULT_RECALL_VAULT is used" in capsys.readouterr().err
+
+
+def test_healthy_vault_prints_no_warning(vault_dir, no_embeddings, capsys):
+    cli.main(["search", "nginx", "--vault", str(vault_dir)])
+    assert "vault-recall:" not in capsys.readouterr().err

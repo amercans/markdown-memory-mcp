@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+from pathlib import Path
 
 from . import __version__, hook
 from .config import Config, ConfigError, load_config
@@ -12,7 +14,7 @@ from .embed import INSTALL_HINT, EmbedderFactory, EmbedUnavailable, default_fact
 from .lint import exit_code, format_human, lint, stored_vectors, summarise
 from .search import build_corpus
 from .store import Store, StoreError, cache_root
-from .vault import load_vault
+from .vault import Vault, load_vault
 
 
 def _common() -> argparse.ArgumentParser:
@@ -58,13 +60,42 @@ def _factory(cfg: Config, *, local_only: bool = False) -> EmbedderFactory | None
     return default_factory(cfg.model, cache_root(), local_only=local_only)
 
 
-def cmd_index(cfg: Config) -> int:
+def warn_about_vault(cfg: Config, vault: Vault, args: argparse.Namespace) -> None:
+    """Say so on stderr when the vault looks wrong, which usually means the wrong folder."""
+    problems = []
+    if not vault.notes and not vault.indexes:
+        problems.append(f"no Markdown files found in {cfg.vault}")
+    else:
+        found = {n.rel for n in vault.indexes}
+        problems += [
+            f"index file {name} not found in {cfg.vault}"
+            for name in cfg.index_files
+            if Path(name).as_posix() not in found
+        ]
+    if not problems:
+        return
+    for problem in problems:
+        print(f"vault-recall: {problem}", file=sys.stderr)
+    if not args.vault:
+        source = (
+            "$VAULT_RECALL_VAULT"
+            if os.environ.get("VAULT_RECALL_VAULT")
+            else "the current directory"
+        )
+        print(
+            f"vault-recall: no --vault given, so {source} is used; pass --vault to choose another",
+            file=sys.stderr,
+        )
+
+
+def cmd_index(cfg: Config, args: argparse.Namespace) -> int:
     factory = _factory(cfg)
     if factory is None:
         print(f"embeddings are not installed: {INSTALL_HINT}", file=sys.stderr)
         print("search and lint still work without an index (BM25 only).", file=sys.stderr)
         return 1
     vault = load_vault(cfg)
+    warn_about_vault(cfg, vault, args)
     store = Store(cfg.vault, cfg.model)
     changes = store.changes(vault.notes)
     if not changes.count and store.exists():
@@ -83,6 +114,7 @@ def cmd_search(cfg: Config, args: argparse.Namespace) -> int:
     corpus = build_corpus(cfg, _factory(cfg, local_only=True))
     if corpus is None:  # not reachable without require_index; keeps the type honest
         return 2
+    warn_about_vault(cfg, corpus.vault, args)
     if corpus.notice:
         print(
             f"embedding model not available ({corpus.notice}): ranking by BM25 only. "
@@ -114,6 +146,7 @@ def cmd_search(cfg: Config, args: argparse.Namespace) -> int:
 
 def cmd_lint(cfg: Config, args: argparse.Namespace) -> int:
     vault = load_vault(cfg)
+    warn_about_vault(cfg, vault, args)
     vectors = stored_vectors(cfg, vault)
     findings = lint(cfg, vault, vectors)
     if args.json:
@@ -148,7 +181,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         cfg = load_config(args.vault, args.config)
         if args.command == "index":
-            return cmd_index(cfg)
+            return cmd_index(cfg, args)
         if args.command == "search":
             return cmd_search(cfg, args)
         if args.command == "lint":
